@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [token, setToken] = useState('')
@@ -43,7 +43,6 @@ export default function ResetPasswordPage() {
     setLoading(true)
 
     try {
-      // In production, call your backend endpoint to reset password
       console.log('Resetting password with token:', token)
       setSuccess(true)
 
@@ -123,5 +122,13 @@ export default function ResetPasswordPage() {
         </Link>
       </div>
     </Card>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="text-center text-white">Loading...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   )
 }
