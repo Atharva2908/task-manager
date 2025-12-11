@@ -38,7 +38,7 @@ app = FastAPI(
 
 
 # CORS middleware
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000", ).split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
