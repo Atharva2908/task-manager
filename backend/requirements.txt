@@ -153,7 +153,7 @@ pyasn1_modules==0.4.1
 pycparser==2.22
 pydantic==2.11.9
 pydantic-mongo==3.1.0
-pydantic-settings==2.1.0
+pydantic-settings>=2.4.0,<3.0
 pydantic_core==2.33.2
 pydeck==0.9.1
 pydyf==0.11.0
