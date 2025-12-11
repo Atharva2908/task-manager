@@ -1,14 +1,17 @@
 'use client'
 
+
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
+
 const leadSources = [
   "calling", "data_entry", "website", "referral", "social_media", "email_campaign", "event", "other",
 ]
+
 
 export default function CreateLeadPage() {
   const [form, setForm] = useState({
@@ -21,24 +24,28 @@ export default function CreateLeadPage() {
   const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
 
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
+
 
   function handleSourceChange(value: string) {
     setForm({ ...form, source: value })
   }
 
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
     try {
-      const res = await fetch('/api/leads', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
+        credentials: 'include',
         body: JSON.stringify(form),
       })
       if (res.ok) {
@@ -51,6 +58,7 @@ export default function CreateLeadPage() {
     }
     setSubmitting(false)
   }
+
 
   return (
     <div className="max-w-md mx-auto p-6">
@@ -79,6 +87,7 @@ export default function CreateLeadPage() {
             ))}
           </SelectContent>
         </Select>
+
 
         <Button type="submit" disabled={submitting}>
           {submitting ? 'Saving…' : 'Create Lead'}

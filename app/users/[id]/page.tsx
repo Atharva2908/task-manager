@@ -38,9 +38,13 @@ export default function EditUserPage() {
   const fetchUser = async () => {
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`http://localhost:8000/api/users/${params.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/users/${params.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
+        }
+      )
 
       if (response.ok) {
         const userData = await response.json()
@@ -55,11 +59,17 @@ export default function EditUserPage() {
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value, type } = e.target as any
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
+      [name]: type === 'checkbox'
+        ? (e.target as HTMLInputElement).checked
+        : value,
     })
   }
 
@@ -70,14 +80,18 @@ export default function EditUserPage() {
 
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`http://localhost:8000/api/users/${params.id}`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/users/${params.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(formData),
+        }
+      )
 
       if (response.ok) {
         setSuccess('User updated successfully')
@@ -98,10 +112,14 @@ export default function EditUserPage() {
 
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`http://localhost:8000/api/users/${params.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/users/${params.id}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
+        }
+      )
 
       if (response.ok) {
         router.push('/users')
@@ -134,7 +152,10 @@ export default function EditUserPage() {
   return (
     <div className="space-y-6">
       <Link href="/users">
-        <Button variant="ghost" className="text-slate-400 hover:text-slate-300 gap-2 px-0">
+        <Button
+          variant="ghost"
+          className="text-slate-400 hover:text-slate-300 gap-2 px-0"
+        >
           <ArrowLeft className="w-4 h-4" />
           Back to Users
         </Button>
@@ -142,7 +163,9 @@ export default function EditUserPage() {
 
       <div>
         <h1 className="text-4xl font-bold text-white">Edit Employee</h1>
-        <p className="text-slate-400 mt-2">Update employee information and permissions</p>
+        <p className="text-slate-400 mt-2">
+          Update employee information and permissions
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -160,10 +183,14 @@ export default function EditUserPage() {
 
           {/* Basic Info */}
           <div>
-            <h2 className="text-xl font-bold text-white mb-4">Basic Information</h2>
+            <h2 className="text-xl font-bold text-white mb-4">
+              Basic Information
+            </h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-200 mb-2">First Name</label>
+                <label className="block text-sm font-semibold text-slate-200 mb-2">
+                  First Name
+                </label>
                 <Input
                   name="first_name"
                   value={formData.first_name || ''}
@@ -172,7 +199,9 @@ export default function EditUserPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-200 mb-2">Last Name</label>
+                <label className="block text-sm font-semibold text-slate-200 mb-2">
+                  Last Name
+                </label>
                 <Input
                   name="last_name"
                   value={formData.last_name || ''}
@@ -181,7 +210,9 @@ export default function EditUserPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-200 mb-2">Email</label>
+                <label className="block text-sm font-semibold text-slate-200 mb-2">
+                  Email
+                </label>
                 <Input
                   name="email"
                   type="email"
@@ -191,7 +222,9 @@ export default function EditUserPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-200 mb-2">Username</label>
+                <label className="block text-sm font-semibold text-slate-200 mb-2">
+                  Username
+                </label>
                 <Input
                   name="username"
                   value={formData.username || ''}
@@ -200,7 +233,9 @@ export default function EditUserPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-200 mb-2">Phone</label>
+                <label className="block text_sm font-semibold text-slate-200 mb-2">
+                  Phone
+                </label>
                 <Input
                   name="phone"
                   value={formData.phone || ''}
@@ -209,7 +244,9 @@ export default function EditUserPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-200 mb-2">Department</label>
+                <label className="block text-sm font-semibold text-slate-200 mb-2">
+                  Department
+                </label>
                 <Input
                   name="department"
                   value={formData.department || ''}
@@ -223,10 +260,14 @@ export default function EditUserPage() {
 
           {/* Role & Permissions */}
           <div className="border-t border-slate-700 pt-6">
-            <h2 className="text-xl font-bold text-white mb-4">Role & Permissions</h2>
+            <h2 className="text-xl font-bold text-white mb-4">
+              Role & Permissions
+            </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-200 mb-2">Role</label>
+                <label className="block text-sm font-semibold text-slate-200 mb-2">
+                  Role
+                </label>
                 <select
                   name="role"
                   value={formData.role || 'employee'}
@@ -238,7 +279,8 @@ export default function EditUserPage() {
                   <option value="admin">Admin</option>
                 </select>
                 <p className="text-slate-400 text-xs mt-1">
-                  Admins have full access. Managers can assign and approve tasks. Employees can only view their own tasks.
+                  Admins have full access. Managers can assign and approve
+                  tasks. Employees can only view their own tasks.
                 </p>
               </div>
 
@@ -253,7 +295,9 @@ export default function EditUserPage() {
                   />
                   <div>
                     <p className="font-medium text-white">Account Active</p>
-                    <p className="text-slate-400 text-sm">Deactivate to temporarily disable access</p>
+                    <p className="text-slate-400 text-sm">
+                      Deactivate to temporarily disable access
+                    </p>
                   </div>
                 </label>
               </div>
@@ -276,7 +320,7 @@ export default function EditUserPage() {
         {/* Sidebar */}
         <div className="space-y-4">
           <Card className="p-6 bg-slate-800 border-slate-700">
-            <h3 className="text-lg font-bold text-white mb-4">Quick Info</h3>
+            <h3 className="text-lg font-bold text_white mb-4">Quick Info</h3>
             <div className="space-y-3 text-sm text-slate-400">
               <div>
                 <p className="text-slate-300 font-medium">User ID</p>
@@ -302,7 +346,9 @@ export default function EditUserPage() {
               <Trash2 className="w-4 h-4" />
               Delete Employee
             </Button>
-            <p className="text-red-400/70 text-xs mt-3">This action cannot be undone</p>
+            <p className="text-red-400/70 text-xs mt-3">
+              This action cannot be undone
+            </p>
           </Card>
         </div>
       </div>

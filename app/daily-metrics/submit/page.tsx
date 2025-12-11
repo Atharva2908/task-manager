@@ -1,10 +1,12 @@
 'use client'
 
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+
 
 export default function DailyMetricsSubmitPage() {
   const [campaigns, setCampaigns] = useState([])
@@ -20,10 +22,12 @@ export default function DailyMetricsSubmitPage() {
   const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
 
+
   useEffect(() => {
     async function fetchCampaigns() {
-      const res = await fetch('/api/campaigns', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/campaigns`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+        credentials: 'include',
       })
       const data = await res.json()
       setCampaigns(data)
@@ -31,11 +35,13 @@ export default function DailyMetricsSubmitPage() {
     fetchCampaigns()
   }, [])
 
+
   useEffect(() => {
     if (!selectedCampaign) return
     async function fetchMetrics() {
-      const res = await fetch(`/api/daily-metrics/campaigns/${selectedCampaign}/daily_metrics`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/daily-metrics/campaigns/${selectedCampaign}/daily_metrics`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+        credentials: 'include',
       })
       if (res.ok) {
         const data = await res.json()
@@ -52,9 +58,11 @@ export default function DailyMetricsSubmitPage() {
     fetchMetrics()
   }, [selectedCampaign])
 
+
   function handleReasonChange(reason: string, value: number) {
     setDisqualificationReasons((prev) => ({ ...prev, [reason]: value }))
   }
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -71,12 +79,13 @@ export default function DailyMetricsSubmitPage() {
       date: metrics?.date,
     }
     try {
-      const res = await fetch(`/api/daily-metrics/campaigns/${selectedCampaign}/daily_metrics/submit`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/daily-metrics/campaigns/${selectedCampaign}/daily_metrics/submit`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
+        credentials: 'include',
         body: JSON.stringify(body),
       })
       if (res.ok) {
@@ -91,9 +100,11 @@ export default function DailyMetricsSubmitPage() {
     setSubmitting(false)
   }
 
+
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-6 space-y-6 border rounded">
       <h1 className="text-2xl font-bold mb-4">Submit Daily Achieved Counts & Lead Outcomes</h1>
+
 
       <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
         <SelectTrigger>
@@ -107,6 +118,7 @@ export default function DailyMetricsSubmitPage() {
           ))}
         </SelectContent>
       </Select>
+
 
       <Input
         type="number"
@@ -157,6 +169,7 @@ export default function DailyMetricsSubmitPage() {
         required
       />
 
+
       {/* Disqualification Reasons input as key-value pairs */}
       {/* For simplicity, using JSON input */}
       <textarea
@@ -171,6 +184,7 @@ export default function DailyMetricsSubmitPage() {
         }}
         className="w-full p-2 border rounded"
       />
+
 
       <Button type="submit" disabled={submitting}>
         {submitting ? 'Submitting…' : 'Submit Metrics'}

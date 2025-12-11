@@ -1,11 +1,13 @@
 'use client'
 
+
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Bell, Mail, CheckCircle, Trash2, Settings } from 'lucide-react'
+
 
 interface Notification {
   _id: string
@@ -16,6 +18,7 @@ interface Notification {
   created_at: string
   related_task_id?: string
 }
+
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -28,13 +31,16 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
 
+
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
         const token = localStorage.getItem('access_token')
-        const response = await fetch('http://localhost:8000/api/notifications', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications`, {
           headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         })
+
 
         if (response.ok) {
           const data = await response.json()
@@ -47,8 +53,10 @@ export default function NotificationsPage() {
       }
     }
 
+
     fetchNotifications()
   }, [])
+
 
   const getNotificationIcon = (type: string) => {
     const icons: Record<string, React.ReactNode> = {
@@ -60,12 +68,14 @@ export default function NotificationsPage() {
     return icons[type] || <Bell className="w-4 h-4 text-slate-400" />
   }
 
+
   const markAsRead = async (notificationId: string) => {
     try {
       const token = localStorage.getItem('access_token')
-      await fetch(`http://localhost:8000/api/notifications/${notificationId}/read`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       setNotifications(
         notifications.map((n) => (n._id === notificationId ? { ...n, is_read: true } : n))
@@ -75,12 +85,14 @@ export default function NotificationsPage() {
     }
   }
 
+
   const deleteNotification = async (notificationId: string) => {
     try {
       const token = localStorage.getItem('access_token')
-      await fetch(`http://localhost:8000/api/notifications/${notificationId}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       setNotifications(notifications.filter((n) => n._id !== notificationId))
     } catch (error) {
@@ -88,12 +100,14 @@ export default function NotificationsPage() {
     }
   }
 
+
   const markAllAsRead = async () => {
     try {
       const token = localStorage.getItem('access_token')
-      await fetch('http://localhost:8000/api/notifications/mark-all-read', {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/mark-all-read`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       setNotifications(notifications.map((n) => ({ ...n, is_read: true })))
     } catch (error) {
@@ -101,10 +115,13 @@ export default function NotificationsPage() {
     }
   }
 
+
   const filteredNotifications =
     filter === 'unread' ? notifications.filter((n) => !n.is_read) : notifications
 
+
   const unreadCount = notifications.filter((n) => !n.is_read).length
+
 
   return (
     <div className="space-y-6">
@@ -127,6 +144,7 @@ export default function NotificationsPage() {
         )}
       </div>
 
+
       <Tabs defaultValue="in-app" className="w-full">
         <TabsList className="bg-slate-800 border-b border-slate-700">
           <TabsTrigger value="in-app" className="data-[state=active]:bg-slate-700">
@@ -137,6 +155,7 @@ export default function NotificationsPage() {
             Preferences
           </TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="in-app" className="space-y-4">
           <div className="flex gap-2 mb-4">
@@ -155,6 +174,7 @@ export default function NotificationsPage() {
               Unread
             </Button>
           </div>
+
 
           {loading ? (
             <Card className="p-12 bg-slate-800 border-slate-700 text-center">
@@ -221,6 +241,7 @@ export default function NotificationsPage() {
             </div>
           )}
         </TabsContent>
+
 
         <TabsContent value="preferences" className="space-y-4">
           <Card className="p-6 bg-slate-800 border-slate-700">

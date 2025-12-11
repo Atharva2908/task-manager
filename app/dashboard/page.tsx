@@ -1,11 +1,13 @@
 'use client'
 
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+
 
 interface DashboardStats {
   total_tasks: number
@@ -15,6 +17,7 @@ interface DashboardStats {
   total_users?: number
   active_users?: number
 }
+
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -29,6 +32,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
+
   useEffect(() => {
     const userData = localStorage.getItem('user')
     if (userData) {
@@ -42,18 +46,22 @@ export default function DashboardPage() {
       }
     }
 
+
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('access_token')
-        const response = await fetch('http://localhost:8000/api/tasks', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
         })
+
 
         if (response.ok) {
           const tasks = await response.json()
           const now = new Date()
+
 
           setStats({
             total_tasks: tasks.length,
@@ -73,8 +81,10 @@ export default function DashboardPage() {
       }
     }
 
+
     fetchStats()
   }, [router])
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">

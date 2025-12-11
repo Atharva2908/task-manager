@@ -1,12 +1,15 @@
 'use client'
 
+
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { AlertCircle, Loader, X, Plus, ArrowLeft } from 'lucide-react'
+
 
 export default function EditTaskPage() {
   const params = useParams()
@@ -24,13 +27,16 @@ export default function EditTaskPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
+
   useEffect(() => {
     const fetchTask = async () => {
       try {
         const token = localStorage.getItem('access_token')
-        const response = await fetch(`http://localhost:8000/api/tasks/${params.id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${params.id}`, {
           headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         })
+
 
         if (response.ok) {
           const task = await response.json()
@@ -53,8 +59,10 @@ export default function EditTaskPage() {
       }
     }
 
+
     fetchTask()
   }, [params.id])
+
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -64,6 +72,7 @@ export default function EditTaskPage() {
       [e.target.name]: e.target.value,
     })
   }
+
 
   const addTag = () => {
     if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
@@ -75,12 +84,14 @@ export default function EditTaskPage() {
     }
   }
 
+
   const removeTag = (tagToRemove: string) => {
     setFormData({
       ...formData,
       tags: formData.tags.filter(tag => tag !== tagToRemove),
     })
   }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -90,22 +101,26 @@ export default function EditTaskPage() {
       return
     }
 
+
     setError('')
     setSubmitting(true)
 
+
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`http://localhost:8000/api/tasks/${params.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${params.id}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           ...formData,
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
         }),
       })
+
 
       if (response.ok) {
         router.push(`/tasks/${params.id}`)
@@ -120,6 +135,7 @@ export default function EditTaskPage() {
     }
   }
 
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -130,6 +146,7 @@ export default function EditTaskPage() {
       </div>
     )
   }
+
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -145,6 +162,7 @@ export default function EditTaskPage() {
         <p className="text-slate-400">Update task details and information</p>
       </div>
 
+
       <Card className="p-8 bg-slate-800 border-slate-700 shadow-xl">
         <form onSubmit={handleSubmit} className="space-y-8">
           {error && (
@@ -153,6 +171,7 @@ export default function EditTaskPage() {
               <p className="text-sm">{error}</p>
             </div>
           )}
+
 
           {/* Title */}
           <div>
@@ -169,6 +188,7 @@ export default function EditTaskPage() {
             />
           </div>
 
+
           {/* Description */}
           <div>
             <label className="block text-sm font-semibold text-slate-200 mb-2">
@@ -182,6 +202,7 @@ export default function EditTaskPage() {
               className="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:outline-none focus:border-blue-500 focus:ring-blue-500/20 placeholder-slate-500 resize-none"
             />
           </div>
+
 
           {/* Priority and Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -202,6 +223,7 @@ export default function EditTaskPage() {
               </select>
             </div>
 
+
             <div>
               <label className="block text-sm font-semibold text-slate-200 mb-3">
                 Status
@@ -221,6 +243,7 @@ export default function EditTaskPage() {
             </div>
           </div>
 
+
           {/* Due Date */}
           <div>
             <label className="block text-sm font-semibold text-slate-200 mb-2">
@@ -234,6 +257,7 @@ export default function EditTaskPage() {
               className="bg-slate-700 border-slate-600 text-white focus:border-blue-500 focus:ring-blue-500/20"
             />
           </div>
+
 
           {/* Tags */}
           <div>
@@ -277,6 +301,7 @@ export default function EditTaskPage() {
               </div>
             )}
           </div>
+
 
           {/* Actions */}
           <div className="flex gap-3 pt-6 border-t border-slate-700">

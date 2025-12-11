@@ -1,14 +1,17 @@
 'use client'
 
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
+
 export default function LeadsPage() {
   const [leads, setLeads] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
+
 
   async function fetchLeads() {
     setLoading(true)
@@ -17,10 +20,11 @@ export default function LeadsPage() {
       if (search) {
         params.append('search', search)
       }
-      const res = await fetch(`/api/leads?${params.toString()}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
+        credentials: 'include',
       })
       const data = await res.json()
       setLeads(data)
@@ -30,9 +34,11 @@ export default function LeadsPage() {
     setLoading(false)
   }
 
+
   useEffect(() => {
     fetchLeads()
   }, [search])
+
 
   return (
     <div className="p-6">
@@ -43,12 +49,14 @@ export default function LeadsPage() {
         </Link>
       </div>
 
+
       <Input
         placeholder="Search leads by name, email, phone, or company"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="mb-4 max-w-md"
       />
+
 
       {loading ? (
         <p>Loading leads...</p>

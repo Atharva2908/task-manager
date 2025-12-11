@@ -1,5 +1,6 @@
 'use client'
 
+
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
@@ -7,18 +8,21 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 
+
 export default function CampaignDetailPage() {
   const { id } = useParams()
   const [campaign, setCampaign] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
+
   async function fetchCampaign() {
     setLoading(true)
     try {
-      const res = await fetch(`/api/campaigns/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/campaigns/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
-        }
+        },
+        credentials: 'include',
       })
       if (res.ok) {
         const data = await res.json()
@@ -32,15 +36,19 @@ export default function CampaignDetailPage() {
     setLoading(false)
   }
 
+
   useEffect(() => {
     fetchCampaign()
   }, [id])
 
+
   if (loading) return <p>Loading campaign details...</p>
   if (!campaign) return <p>Campaign not found.</p>
 
+
   const today = new Date().toISOString().split('T')[0]
   const todayTarget = campaign.daily_targets?.find((t: any) => t.date === today)
+
 
   const dataProgress = todayTarget
     ? (todayTarget.data_achieved / todayTarget.data_target) * 100 || 0
@@ -49,10 +57,12 @@ export default function CampaignDetailPage() {
     ? (todayTarget.calling_achieved / todayTarget.calling_target) * 100 || 0
     : 0
 
+
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <h1 className="text-3xl font-bold mb-4">{campaign.name}</h1>
       <p className="mb-2">{campaign.description}</p>
+
 
       <div className="grid grid-cols-2 gap-6 mb-6">
         <div>
@@ -70,6 +80,7 @@ export default function CampaignDetailPage() {
           <Progress value={callingProgress} className="h-2 rounded" />
         </div>
       </div>
+
 
       <Link href={`/campaigns/${id}/leads`}>
         <Button>View Leads</Button>

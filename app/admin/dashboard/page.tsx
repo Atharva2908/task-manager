@@ -1,11 +1,13 @@
 'use client'
 
+
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
+
 
 interface DashboardStats {
   total_tasks: number
@@ -16,6 +18,7 @@ interface DashboardStats {
   active_employees: number
   overdue_tasks: number
 }
+
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
@@ -30,28 +33,40 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [chartData, setChartData] = useState([])
 
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('access_token')
 
+
         // Fetch all data
         const [tasksRes, usersRes] = await Promise.all([
-          fetch('http://localhost:8000/api/tasks', { headers: { Authorization: `Bearer ${token}` } }),
-          fetch('http://localhost:8000/api/users', { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, { 
+            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include',
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, { 
+            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include',
+          }),
         ])
+
 
         let tasks = []
         let users = []
 
+
         if (tasksRes.ok) tasks = await tasksRes.json()
         if (usersRes.ok) users = await usersRes.json()
+
 
         const now = new Date()
         const completedCount = tasks.filter((t: any) => t.status === 'completed').length
         const inProgressCount = tasks.filter((t: any) => t.status === 'in_progress').length
         const overdueCount = tasks.filter((t: any) => t.due_date && new Date(t.due_date) < now && t.status !== 'completed').length
         const pendingCount = tasks.filter((t: any) => t.status === 'todo').length
+
 
         setStats({
           total_tasks: tasks.length,
@@ -62,6 +77,7 @@ export default function AdminDashboard() {
           active_employees: users.filter((u: any) => u.role === 'employee' && u.is_active).length,
           overdue_tasks: overdueCount,
         })
+
 
         // Generate chart data
         const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -74,6 +90,7 @@ export default function AdminDashboard() {
           }
         })
 
+
         setChartData(last7Days)
       } catch (error) {
         console.error('Failed to fetch stats:', error)
@@ -82,8 +99,10 @@ export default function AdminDashboard() {
       }
     }
 
+
     fetchStats()
   }, [])
+
 
   const StatCard = ({ title, value, icon, color, subtext }: any) => (
     <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 hover:border-slate-600 transition">
@@ -97,6 +116,7 @@ export default function AdminDashboard() {
       </div>
     </Card>
   )
+
 
   return (
     <div className="space-y-8">
@@ -113,6 +133,7 @@ export default function AdminDashboard() {
           <p className="text-slate-400">System overview and management</p>
         </div>
       </div>
+
 
       {/* Main Stats Grid */}
       {!loading && (
@@ -176,6 +197,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
+
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6 bg-slate-800 border-slate-700">
@@ -191,6 +213,7 @@ export default function AdminDashboard() {
             </LineChart>
           </ResponsiveContainer>
         </Card>
+
 
         <Card className="p-6 bg-slate-800 border-slate-700">
           <h2 className="text-xl font-bold text-white mb-6">Task Distribution</h2>
@@ -210,6 +233,7 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-6 bg-slate-800 border-slate-700">
@@ -228,6 +252,7 @@ export default function AdminDashboard() {
           </div>
         </Card>
 
+
         <Card className="p-6 bg-slate-800 border-slate-700">
           <h3 className="text-lg font-bold text-white mb-4">Team Management</h3>
           <div className="space-y-2">
@@ -243,6 +268,7 @@ export default function AdminDashboard() {
             </Link>
           </div>
         </Card>
+
 
         <Card className="p-6 bg-slate-800 border-slate-700">
           <h3 className="text-lg font-bold text-white mb-4">Reports & Analytics</h3>

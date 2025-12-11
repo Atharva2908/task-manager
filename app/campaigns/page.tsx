@@ -1,21 +1,25 @@
 'use client'
 
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 
+
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
+
   async function fetchCampaigns() {
     setLoading(true)
     try {
-      const res = await fetch('/api/campaigns', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/campaigns`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
+        credentials: 'include',
       })
       const data = await res.json()
       setCampaigns(data)
@@ -25,9 +29,11 @@ export default function CampaignsPage() {
     setLoading(false)
   }
 
+
   useEffect(() => {
     fetchCampaigns()
   }, [])
+
 
   return (
     <div className="p-6">
@@ -38,6 +44,7 @@ export default function CampaignsPage() {
         </Link>
       </div>
 
+
       {loading ? (
         <p>Loading campaigns...</p>
       ) : (
@@ -47,12 +54,14 @@ export default function CampaignsPage() {
             const today = new Date().toISOString().split('T')[0]
             const todayTarget = campaign.daily_targets?.find((t: any) => t.date === today)
 
+
             const dataProgress = todayTarget
               ? (todayTarget.data_achieved / todayTarget.data_target) * 100 || 0
               : 0
             const callingProgress = todayTarget
               ? (todayTarget.calling_achieved / todayTarget.calling_target) * 100 || 0
               : 0
+
 
             return (
               <div
@@ -66,7 +75,9 @@ export default function CampaignsPage() {
                   </Link>
                 </div>
 
+
                 <div className="text-sm mb-2">{campaign.description}</div>
+
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -78,6 +89,7 @@ export default function CampaignsPage() {
                     </div>
                     <Progress value={dataProgress} className="h-2 rounded" />
                   </div>
+
 
                   <div>
                     <div className="flex justify-between mb-1">

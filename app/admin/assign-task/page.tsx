@@ -1,5 +1,6 @@
 'use client'
 
+
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -7,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AlertCircle, CheckCircle2, Clock, Users, Flag, Calendar } from 'lucide-react'
+
 
 interface User {
   _id: string
@@ -17,6 +19,7 @@ interface User {
   role: string
   department?: string
 }
+
 
 export default function AssignTaskPage() {
   const router = useRouter()
@@ -36,15 +39,18 @@ export default function AssignTaskPage() {
   const [error, setError] = useState('')
   const [currentUser, setCurrentUser] = useState<any>(null)
 
+
   useEffect(() => {
     const userData = localStorage.getItem('user')
     if (userData) setCurrentUser(JSON.parse(userData))
 
+
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem('access_token')
-        const response = await fetch('http://localhost:8000/api/users', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
           headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         })
         if (response.ok) {
           const data = await response.json()
@@ -58,11 +64,13 @@ export default function AssignTaskPage() {
     fetchUsers()
   }, [])
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
     setSuccess('')
+
 
     if (!formData.title.trim()) {
       setError('Task title is required')
@@ -70,11 +78,13 @@ export default function AssignTaskPage() {
       return
     }
 
+
     if (!formData.assigned_to) {
       setError('Please select an employee to assign the task')
       setLoading(false)
       return
     }
+
 
     try {
       const token = localStorage.getItem('access_token')
@@ -90,14 +100,17 @@ export default function AssignTaskPage() {
         created_by: currentUser?._id,
       }
 
-      const response = await fetch('http://localhost:8000/api/tasks', {
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(taskPayload),
       })
+
 
       if (response.ok) {
         setSuccess('Task assigned successfully! Redirecting...')
@@ -123,12 +136,14 @@ export default function AssignTaskPage() {
     }
   }
 
+
   const priorityOptions = [
     { value: 'low', label: 'Low', color: 'bg-green-500/20 border-green-500/30 text-green-400' },
     { value: 'medium', label: 'Medium', color: 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' },
     { value: 'high', label: 'High', color: 'bg-orange-500/20 border-orange-500/30 text-orange-400' },
     { value: 'urgent', label: 'Urgent', color: 'bg-red-500/20 border-red-500/30 text-red-400' },
   ]
+
 
   return (
     <div className="space-y-6">
@@ -143,6 +158,7 @@ export default function AssignTaskPage() {
           </Button>
         </Link>
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form */}
@@ -164,6 +180,7 @@ export default function AssignTaskPage() {
               <p className="text-slate-500 text-xs mt-1">Be specific about what needs to be done</p>
             </div>
 
+
             {/* Task Description */}
             <div>
               <label className="block text-sm font-semibold text-slate-200 mb-2">
@@ -178,6 +195,7 @@ export default function AssignTaskPage() {
                 rows={5}
               />
             </div>
+
 
             {/* Priority Selection */}
             <div>
@@ -208,6 +226,7 @@ export default function AssignTaskPage() {
               </div>
             </div>
 
+
             {/* Due Date and Estimated Hours */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -222,6 +241,7 @@ export default function AssignTaskPage() {
                   className="bg-slate-700 border-slate-600 text-white focus:border-blue-500"
                 />
               </div>
+
 
               <div>
                 <label className="block text-sm font-semibold text-slate-200 mb-2">
@@ -238,6 +258,7 @@ export default function AssignTaskPage() {
                 />
               </div>
             </div>
+
 
             {/* Assign To Employee */}
             <div>
@@ -262,6 +283,7 @@ export default function AssignTaskPage() {
               )}
             </div>
 
+
             {/* Tags */}
             <div>
               <label className="block text-sm font-semibold text-slate-200 mb-2">
@@ -275,6 +297,7 @@ export default function AssignTaskPage() {
                 className="bg-slate-700 border-slate-600 text-white placeholder-slate-500 focus:border-blue-500"
               />
             </div>
+
 
             {/* Approval Workflow */}
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
@@ -294,6 +317,7 @@ export default function AssignTaskPage() {
               </p>
             </div>
 
+
             {/* Status Messages */}
             {error && (
               <div className="p-4 bg-red-500/10 border border-red-500/50 text-red-400 rounded-lg flex items-start gap-3">
@@ -307,6 +331,7 @@ export default function AssignTaskPage() {
                 <p className="text-sm">{success}</p>
               </div>
             )}
+
 
             {/* Submit Button */}
             <div className="flex gap-3 pt-6 border-t border-slate-700">
@@ -328,6 +353,7 @@ export default function AssignTaskPage() {
             </div>
           </form>
         </Card>
+
 
         {/* Info Sidebar */}
         <div className="space-y-4">
@@ -367,6 +393,7 @@ export default function AssignTaskPage() {
               </div>
             </div>
           </Card>
+
 
           <Card className="p-6 bg-slate-800 border-slate-700">
             <h3 className="font-semibold text-white mb-4 flex items-center gap-2">

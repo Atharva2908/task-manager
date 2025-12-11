@@ -1,9 +1,11 @@
 'use client'
 
+
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+
 
 interface Task {
   _id: string
@@ -16,6 +18,7 @@ interface Task {
   created_at: string
 }
 
+
 interface User {
   _id: string
   first_name: string
@@ -23,29 +26,35 @@ interface User {
   email: string
 }
 
+
 export default function TaskAssignmentsPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [users, setUsers] = useState<Record<string, User>>({})
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
 
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('access_token')
 
+
         // Fetch tasks
-        const tasksRes = await fetch('http://localhost:8000/api/tasks', {
+        const tasksRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
           headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         })
         if (tasksRes.ok) {
           const tasksData = await tasksRes.json()
           setTasks(tasksData)
         }
 
+
         // Fetch users
-        const usersRes = await fetch('http://localhost:8000/api/users', {
+        const usersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
           headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         })
         if (usersRes.ok) {
           const usersData = await usersRes.json()
@@ -62,8 +71,10 @@ export default function TaskAssignmentsPage() {
       }
     }
 
+
     fetchData()
   }, [])
+
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -76,6 +87,7 @@ export default function TaskAssignmentsPage() {
     return colors[status] || 'text-slate-400 bg-slate-900/20'
   }
 
+
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, string> = {
       urgent: 'text-red-400 bg-red-900/20',
@@ -86,10 +98,12 @@ export default function TaskAssignmentsPage() {
     return colors[priority] || 'text-slate-400 bg-slate-900/20'
   }
 
+
   const filteredTasks = tasks.filter(task => {
     if (filter === 'all') return true
     return task.status === filter
   })
+
 
   return (
     <div className="space-y-6">
@@ -104,6 +118,7 @@ export default function TaskAssignmentsPage() {
           </Button>
         </Link>
       </div>
+
 
       {/* Filter Stats */}
       <div className="grid grid-cols-5 gap-4">
@@ -128,6 +143,7 @@ export default function TaskAssignmentsPage() {
           </button>
         ))}
       </div>
+
 
       {/* Tasks Table */}
       {loading ? (

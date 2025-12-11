@@ -1,28 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '')
+
 
   if (!token) {
     return NextResponse.json({ detail: 'Unauthorized' }, { status: 401 })
   }
 
+
   try {
     const body = await request.json()
 
-    const response = await fetch(`http://localhost:8000/api/tasks/${params.id}/time-logs`, {
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${params.id}/time-logs`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify(body),
     })
+
 
     if (!response.ok) {
       const error = await response.json()
       return NextResponse.json(error, { status: response.status })
     }
+
 
     const data = await response.json()
     return NextResponse.json(data, { status: 201 })
@@ -31,23 +38,29 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
 }
 
+
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '')
+
 
   if (!token) {
     return NextResponse.json({ detail: 'Unauthorized' }, { status: 401 })
   }
 
+
   try {
-    const response = await fetch(`http://localhost:8000/api/tasks/${params.id}/time-logs`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${params.id}/time-logs`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      credentials: 'include',
     })
+
 
     if (!response.ok) {
       throw new Error('Failed to fetch time logs')
     }
+
 
     const data = await response.json()
     return NextResponse.json(data)

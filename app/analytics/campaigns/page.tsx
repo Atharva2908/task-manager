@@ -1,18 +1,22 @@
 'use client'
 
+
 import { useState, useEffect } from 'react'
+
 
 export default function CampaignAnalyticsPage() {
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
+
   async function fetchCampaigns() {
     setLoading(true)
     try {
-      const res = await fetch('/api/analytics/campaigns/overview', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/campaigns/overview`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
+        credentials: 'include',
       })
       const data = await res.json()
       setCampaigns(data.campaigns || [])
@@ -22,16 +26,20 @@ export default function CampaignAnalyticsPage() {
     setLoading(false)
   }
 
+
   useEffect(() => {
     fetchCampaigns()
   }, [])
 
+
   if (loading) return <p>Loading campaign analytics...</p>
   if (campaigns.length === 0) return <p>No campaigns found.</p>
+
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Campaign Analytics Overview</h1>
+
 
       <table className="w-full border-collapse border border-slate-200">
         <thead>

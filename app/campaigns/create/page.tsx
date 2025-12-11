@@ -1,10 +1,12 @@
 'use client'
 
+
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
 
 const campaignTypes = [
   "calling",
@@ -13,6 +15,7 @@ const campaignTypes = [
   "email",
   "social_media"
 ]
+
 
 export default function CreateCampaignPage() {
   const [form, setForm] = useState({
@@ -26,25 +29,30 @@ export default function CreateCampaignPage() {
   const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
 
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
+
 
   function handleTypeChange(value: string) {
     setForm({ ...form, campaign_type: value })
   }
 
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
 
+
     try {
-      const res = await fetch('/api/campaigns', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/campaigns`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         },
+        credentials: 'include',
         body: JSON.stringify({
           ...form,
           budget: Number(form.budget),
@@ -61,8 +69,10 @@ export default function CreateCampaignPage() {
       alert('Failed to create campaign')
     }
 
+
     setSubmitting(false)
   }
+
 
   return (
     <div className="max-w-md mx-auto p-6">

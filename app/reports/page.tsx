@@ -1,11 +1,13 @@
 'use client'
 
+
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Download, FileText } from 'lucide-react'
+
 
 interface Task {
   _id: string
@@ -17,11 +19,13 @@ interface Task {
   created_at: string
 }
 
+
 interface User {
   _id: string
   first_name: string
   last_name: string
 }
+
 
 export default function ReportsPage() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -29,14 +33,22 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true)
   const [exportLoading, setExportLoading] = useState<string | null>(null)
 
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('access_token')  // You may keep token for other API calls
+        const token = localStorage.getItem('access_token')
         const [tasksRes, usersRes] = await Promise.all([
-          fetch('http://localhost:8000/api/tasks', { headers: { Authorization: `Bearer ${token}` } }),
-          fetch('http://localhost:8000/api/users', { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, { 
+            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include',
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, { 
+            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include',
+          }),
         ])
+
 
         if (tasksRes.ok) setTasks(await tasksRes.json())
         if (usersRes.ok) setUsers(await usersRes.json())
@@ -47,8 +59,10 @@ export default function ReportsPage() {
       }
     }
 
+
     fetchData()
   }, [])
+
 
   const getStats = () => {
     const now = new Date()
@@ -63,6 +77,7 @@ export default function ReportsPage() {
       high: tasks.filter((t) => t.priority === 'high').length,
     }
   }
+
 
   const generateChartData = () => {
     const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -84,6 +99,7 @@ export default function ReportsPage() {
     return last7Days
   }
 
+
   const getTasksByStatus = () => {
     return [
       { name: 'To Do', value: tasks.filter((t) => t.status === 'todo').length, fill: '#64748b' },
@@ -92,6 +108,7 @@ export default function ReportsPage() {
       { name: 'On Hold', value: tasks.filter((t) => t.status === 'on_hold').length, fill: '#f59e0b' },
     ]
   }
+
 
   const getTeamProductivity = () => {
     return users.map((user) => {
@@ -106,10 +123,12 @@ export default function ReportsPage() {
     })
   }
 
+
   const stats = getStats()
   const chartData = generateChartData()
   const statusData = getTasksByStatus()
   const teamData = getTeamProductivity()
+
 
   const StatCard = ({ label, value, color, subtext }: any) => (
     <Card className="p-6 bg-slate-800 border-slate-700">
@@ -119,15 +138,21 @@ export default function ReportsPage() {
     </Card>
   )
 
-  // UPDATED: Export without sending Authorization header (public)
+
   const exportReport = async (format: 'csv' | 'excel' | 'pdf') => {
     try {
       setExportLoading(format)
+      const token = localStorage.getItem('access_token')
 
-      const response = await fetch(`http://localhost:8000/api/reports/export?format=${format}`, {
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/export?format=${format}`, {
         method: 'GET',
-        // No Authorization header sent
+        headers: { 
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
       })
+
 
       if (response.ok) {
         const blob = await response.blob()
@@ -139,6 +164,7 @@ export default function ReportsPage() {
         a.click()
         document.body.removeChild(a)
         window.URL.revokeObjectURL(url)
+
 
         console.log(`${format.toUpperCase()} report downloaded successfully`)
       } else {
@@ -154,9 +180,11 @@ export default function ReportsPage() {
     }
   }
 
+
   if (loading) {
     return <div className="text-center text-slate-400 py-8">Loading reports...</div>
   }
+
 
   return (
     <div className="space-y-8">
@@ -199,12 +227,14 @@ export default function ReportsPage() {
         </div>
       </div>
 
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Tasks" value={stats.total} color="text-blue-400" />
         <StatCard label="Completed" value={stats.completed} color="text-green-400" subtext={`${stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}% completion`} />
         <StatCard label="In Progress" value={stats.in_progress} color="text-yellow-400" />
         <StatCard label="Overdue" value={stats.overdue} color="text-red-400" subtext="Needs attention" />
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6 bg-slate-800 border-slate-700">
@@ -222,6 +252,7 @@ export default function ReportsPage() {
           </ResponsiveContainer>
         </Card>
 
+
         <Card className="p-6 bg-slate-800 border-slate-700">
           <h2 className="text-xl font-bold text-white mb-4">Tasks by Status</h2>
           <ResponsiveContainer width="100%" height={300}>
@@ -236,6 +267,7 @@ export default function ReportsPage() {
           </ResponsiveContainer>
         </Card>
       </div>
+
 
       <Card className="p-6 bg-slate-800 border-slate-700">
         <h2 className="text-xl font-bold text-white mb-4">Team Productivity</h2>
@@ -273,6 +305,7 @@ export default function ReportsPage() {
           </table>
         </div>
       </Card>
+
 
       <Card className="p-6 bg-slate-800 border-slate-700">
         <h2 className="text-xl font-bold text-white mb-4">Priority Distribution</h2>

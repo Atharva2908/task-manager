@@ -31,8 +31,9 @@ export default function KanbanBoardPage() {
     const fetchTasks = async () => {
       try {
         const token = localStorage.getItem('access_token')
-        const response = await fetch('http://localhost:8000/api/tasks', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
           headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         })
 
         if (response.ok) {
@@ -83,7 +84,7 @@ export default function KanbanBoardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-8">
         {STATUSES.map((status) => {
           const statusTasks = getTasksByStatus(status.value)
-          
+
           return (
             <div key={status.value} className="flex flex-col">
               {/* Column Header */}

@@ -1,5 +1,6 @@
 'use client'
 
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { AlertCircle, Plus, X } from 'lucide-react'
+
 
 export default function CreateTaskPage() {
   const router = useRouter()
@@ -22,6 +24,7 @@ export default function CreateTaskPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -30,6 +33,7 @@ export default function CreateTaskPage() {
       [e.target.name]: e.target.value,
     })
   }
+
 
   const addTag = () => {
     if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
@@ -41,12 +45,14 @@ export default function CreateTaskPage() {
     }
   }
 
+
   const removeTag = (tagToRemove: string) => {
     setFormData({
       ...formData,
       tags: formData.tags.filter(tag => tag !== tagToRemove),
     })
   }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,21 +63,25 @@ export default function CreateTaskPage() {
       return
     }
 
+
     setLoading(true)
+
 
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch('http://localhost:8000/api/tasks', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           ...formData,
           due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null,
         }),
       })
+
 
       if (response.ok) {
         router.push('/tasks')
@@ -86,12 +96,14 @@ export default function CreateTaskPage() {
     }
   }
 
+
   const priorityColors = {
     low: { bg: 'bg-green-500/20', border: 'border-green-500/30', text: 'text-green-400' },
     medium: { bg: 'bg-yellow-500/20', border: 'border-yellow-500/30', text: 'text-yellow-400' },
     high: { bg: 'bg-orange-500/20', border: 'border-orange-500/30', text: 'text-orange-400' },
     urgent: { bg: 'bg-red-500/20', border: 'border-red-500/30', text: 'text-red-400' },
   }
+
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -101,6 +113,7 @@ export default function CreateTaskPage() {
         <p className="text-slate-400">Define a new task and assign it to your team</p>
       </div>
 
+
       <Card className="p-8 bg-slate-800 border-slate-700 shadow-xl">
         <form onSubmit={handleSubmit} className="space-y-8">
           {error && (
@@ -109,6 +122,7 @@ export default function CreateTaskPage() {
               <p className="text-sm">{error}</p>
             </div>
           )}
+
 
           {/* Title */}
           <div>
@@ -127,6 +141,7 @@ export default function CreateTaskPage() {
             <p className="text-slate-500 text-xs mt-1">Be specific and concise</p>
           </div>
 
+
           {/* Description */}
           <div>
             <label className="block text-sm font-semibold text-slate-200 mb-2">
@@ -141,6 +156,7 @@ export default function CreateTaskPage() {
               className="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:outline-none focus:border-blue-500 focus:ring-blue-500/20 placeholder-slate-500 resize-none"
             />
           </div>
+
 
           {/* Priority and Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -174,6 +190,7 @@ export default function CreateTaskPage() {
               </div>
             </div>
 
+
             <div>
               <label className="block text-sm font-semibold text-slate-200 mb-3">
                 Initial Status
@@ -192,6 +209,7 @@ export default function CreateTaskPage() {
             </div>
           </div>
 
+
           {/* Due Date */}
           <div>
             <label className="block text-sm font-semibold text-slate-200 mb-2">
@@ -206,6 +224,7 @@ export default function CreateTaskPage() {
             />
             <p className="text-slate-500 text-xs mt-1">Optional. Set a deadline for this task</p>
           </div>
+
 
           {/* Tags */}
           <div>
@@ -249,6 +268,7 @@ export default function CreateTaskPage() {
               </div>
             )}
           </div>
+
 
           {/* Actions */}
           <div className="flex gap-3 pt-6 border-t border-slate-700">

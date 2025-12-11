@@ -1,11 +1,13 @@
 'use client'
 
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
+
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
@@ -14,15 +16,26 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
+
     try {
-      // Simulate sending reset email
-      // In production, call your backend endpoint
-      console.log('Password reset email sent to:', email)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.detail || 'Failed to send reset email')
+      }
+
       setSubmitted(true)
       
       // Redirect after 5 seconds
@@ -36,12 +49,14 @@ export default function ForgotPasswordPage() {
     }
   }
 
+
   return (
     <Card className="p-8 bg-slate-900 border-slate-800">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Reset Password</h1>
         <p className="text-slate-400">Enter your email to receive reset instructions</p>
       </div>
+
 
       {submitted ? (
         <div className="space-y-4">
@@ -58,6 +73,7 @@ export default function ForgotPasswordPage() {
             </div>
           )}
 
+
           <div>
             <label className="block text-sm font-medium text-slate-200 mb-1">
               Email Address
@@ -72,6 +88,7 @@ export default function ForgotPasswordPage() {
             />
           </div>
 
+
           <Button
             type="submit"
             disabled={loading}
@@ -81,6 +98,7 @@ export default function ForgotPasswordPage() {
           </Button>
         </form>
       )}
+
 
       <div className="mt-6 text-center text-slate-400">
         Remember your password?{' '}

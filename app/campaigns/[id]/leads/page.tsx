@@ -1,22 +1,26 @@
 'use client'
 
+
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+
 
 export default function CampaignLeadsPage() {
   const { id } = useParams()
   const [leads, setLeads] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+
   async function fetchLeads() {
     setLoading(true)
     try {
-      const res = await fetch(`/api/campaigns/${id}/leads`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/campaigns/${id}/leads`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
-        }
+        },
+        credentials: 'include',
       })
       if (res.ok) {
         const data = await res.json()
@@ -30,13 +34,16 @@ export default function CampaignLeadsPage() {
     setLoading(false)
   }
 
+
   useEffect(() => {
     fetchLeads()
   }, [id])
 
+
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Leads for Campaign</h1>
+
 
       {loading ? (
         <p>Loading leads...</p>
@@ -61,8 +68,8 @@ export default function CampaignLeadsPage() {
                 <td className="border border-slate-300 px-4 py-2">{lead.phone}</td>
                 <td className="border border-slate-300 px-4 py-2">{lead.status}</td>
                 <td className="border border-slate-300 px-4 py-2">
-                  <Link href={`/leads/${lead.id}`}>
-                    <a className="text-blue-600 hover:underline">View</a>
+                  <Link href={`/leads/${lead.id}`} className="text-blue-600 hover:underline">
+                    View
                   </Link>
                 </td>
               </tr>

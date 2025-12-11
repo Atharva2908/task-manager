@@ -1,5 +1,6 @@
 'use client'
 
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { AlertCircle, Eye, EyeOff, CheckCircle } from 'lucide-react'
+
 
 export default function SignupPage() {
   const router = useRouter()
@@ -24,6 +26,7 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
 
   const getPasswordStrength = (password: string) => {
     if (!password) return { strength: 0, label: '', color: '' }
@@ -43,6 +46,7 @@ export default function SignupPage() {
     }
   }
 
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
@@ -50,26 +54,32 @@ export default function SignupPage() {
     })
   }
 
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
 
     if (formData.password !== formData.confirm_password) {
       setError('Passwords do not match')
       return
     }
 
+
     if (formData.password.length < 8) {
       setError('Password must be at least 8 characters long')
       return
     }
 
+
     setLoading(true)
 
+
     try {
-      const response = await fetch('http://localhost:8000/api/auth/signup', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           email: formData.email,
           username: formData.username,
@@ -80,14 +90,18 @@ export default function SignupPage() {
         }),
       })
 
+
       if (!response.ok) {
         const data = await response.json()
         throw new Error(data.detail || 'Signup failed')
       }
 
+
       const data = await response.json()
       localStorage.setItem('access_token', data.access_token)
       localStorage.setItem('user', JSON.stringify(data.user))
+      
+      document.cookie = `access_token=${data.access_token}; path=/; max-age=86400`
       
       router.push('/dashboard')
     } catch (err: any) {
@@ -97,7 +111,9 @@ export default function SignupPage() {
     }
   }
 
+
   const passwordStrength = getPasswordStrength(formData.password)
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4 py-8">
@@ -106,6 +122,7 @@ export default function SignupPage() {
         <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
       </div>
+
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-2xl">
@@ -125,6 +142,7 @@ export default function SignupPage() {
             <p className="text-slate-400">Join our task management platform today</p>
           </div>
 
+
           <form onSubmit={handleSignup} className="space-y-5">
             {error && (
               <div className="p-4 bg-red-500/10 border border-red-500/50 text-red-400 rounded-lg flex items-start gap-3">
@@ -132,6 +150,7 @@ export default function SignupPage() {
                 <p className="text-sm">{error}</p>
               </div>
             )}
+
 
             {/* Name Fields */}
             <div className="grid md:grid-cols-2 gap-4">
@@ -165,6 +184,7 @@ export default function SignupPage() {
               </div>
             </div>
 
+
             {/* Email Field */}
             <div>
               <label className="block text-sm font-semibold text-slate-200 mb-2">
@@ -181,6 +201,7 @@ export default function SignupPage() {
               />
             </div>
 
+
             {/* Username Field */}
             <div>
               <label className="block text-sm font-semibold text-slate-200 mb-2">
@@ -196,6 +217,7 @@ export default function SignupPage() {
                 required
               />
             </div>
+
 
             <div>
               <label className="block text-sm font-semibold text-slate-200 mb-2">
@@ -217,6 +239,7 @@ export default function SignupPage() {
                 {formData.role === 'employee' && 'Personal task management'}
               </p>
             </div>
+
 
             {/* Password Field */}
             <div>
@@ -263,6 +286,7 @@ export default function SignupPage() {
               )}
             </div>
 
+
             {/* Confirm Password Field */}
             <div>
               <label className="block text-sm font-semibold text-slate-200 mb-2">
@@ -287,6 +311,7 @@ export default function SignupPage() {
                 </button>
               </div>
 
+
               {formData.confirm_password && (
                 <div className="mt-2 flex items-center gap-2">
                   {formData.password === formData.confirm_password ? (
@@ -304,6 +329,7 @@ export default function SignupPage() {
               )}
             </div>
 
+
             <Button
               type="submit"
               disabled={loading}
@@ -312,6 +338,7 @@ export default function SignupPage() {
               {loading ? 'Creating account...' : 'Create Account'}
             </Button>
           </form>
+
 
           {/* Terms */}
           <p className="text-center text-xs text-slate-400 mt-6">
@@ -324,6 +351,7 @@ export default function SignupPage() {
               Privacy Policy
             </Link>
           </p>
+
 
           {/* Footer Links */}
           <div className="mt-6 pt-6 border-t border-slate-700 text-center text-slate-400 text-sm">

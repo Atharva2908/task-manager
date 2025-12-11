@@ -1,10 +1,12 @@
 'use client'
 
+
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+
 
 export default function CampaignSettingsPage() {
   const { id } = useParams()
@@ -18,13 +20,15 @@ export default function CampaignSettingsPage() {
   const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
 
+
   async function fetchCampaign() {
     setLoading(true)
     try {
-      const res = await fetch(`/api/campaigns/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/campaigns/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
-        }
+        },
+        credentials: 'include',
       })
       if (res.ok) {
         const data = await res.json()
@@ -43,24 +47,28 @@ export default function CampaignSettingsPage() {
     setLoading(false)
   }
 
+
   useEffect(() => {
     fetchCampaign()
   }, [id])
+
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
     try {
-      const res = await fetch(`/api/campaigns/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/campaigns/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: form.name,
           description: form.description,
@@ -78,8 +86,10 @@ export default function CampaignSettingsPage() {
     setSubmitting(false)
   }
 
+
   if (loading) return <p>Loading...</p>
   if (!campaign) return <p>Campaign not found.</p>
+
 
   return (
     <div className="max-w-md mx-auto p-6">

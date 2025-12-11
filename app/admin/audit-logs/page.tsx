@@ -1,11 +1,13 @@
 'use client'
 
+
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { AlertCircle, Download } from 'lucide-react'
+
 
 interface AuditLog {
   _id: string
@@ -16,6 +18,7 @@ interface AuditLog {
   entity_type: string
   entity_id: string
 }
+
 
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([])
@@ -28,13 +31,16 @@ export default function AuditLogsPage() {
     dateTo: '',
   })
 
+
   useEffect(() => {
     const fetchLogs = async () => {
       try {
         const token = localStorage.getItem('access_token')
-        const response = await fetch('http://localhost:8000/api/audit-logs', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/audit-logs`, {
           headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         })
+
 
         if (response.ok) {
           const data = await response.json()
@@ -48,30 +54,38 @@ export default function AuditLogsPage() {
       }
     }
 
+
     fetchLogs()
   }, [])
 
+
   useEffect(() => {
     let filtered = logs
+
 
     if (filters.action !== 'all') {
       filtered = filtered.filter((log) => log.action === filters.action)
     }
 
+
     if (filters.user) {
       filtered = filtered.filter((log) => log.user.toLowerCase().includes(filters.user.toLowerCase()))
     }
+
 
     if (filters.dateFrom) {
       filtered = filtered.filter((log) => new Date(log.timestamp) >= new Date(filters.dateFrom))
     }
 
+
     if (filters.dateTo) {
       filtered = filtered.filter((log) => new Date(log.timestamp) <= new Date(filters.dateTo))
     }
 
+
     setFilteredLogs(filtered)
   }, [filters, logs])
+
 
   const getActionColor = (action: string) => {
     const colors: Record<string, { bg: string; text: string }> = {
@@ -85,12 +99,15 @@ export default function AuditLogsPage() {
     return colors[action] || { bg: 'bg-slate-500/10', text: 'text-slate-400' }
   }
 
+
   const exportLogs = async (format: 'csv' | 'json') => {
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`http://localhost:8000/api/audit-logs/export?format=${format}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/audit-logs/export?format=${format}`, {
         headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
+
 
       if (response.ok) {
         const blob = await response.blob()
@@ -104,6 +121,7 @@ export default function AuditLogsPage() {
       console.error('Failed to export logs:', error)
     }
   }
+
 
   return (
     <div className="space-y-6">
@@ -127,6 +145,7 @@ export default function AuditLogsPage() {
         </div>
       </div>
 
+
       <Card className="p-4 bg-slate-800 border-slate-700">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <select
@@ -143,6 +162,7 @@ export default function AuditLogsPage() {
             <option value="logout">Logout</option>
           </select>
 
+
           <Input
             placeholder="Filter by user..."
             value={filters.user}
@@ -150,12 +170,14 @@ export default function AuditLogsPage() {
             className="bg-slate-700 border-slate-600 text-white"
           />
 
+
           <Input
             type="date"
             value={filters.dateFrom}
             onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
             className="bg-slate-700 border-slate-600 text-white"
           />
+
 
           <Input
             type="date"
@@ -165,6 +187,7 @@ export default function AuditLogsPage() {
           />
         </div>
       </Card>
+
 
       {loading ? (
         <Card className="p-12 bg-slate-800 border-slate-700 text-center">

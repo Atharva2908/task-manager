@@ -1,10 +1,12 @@
 'use client'
 
+
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+
 
 interface Task {
   _id: string
@@ -15,12 +17,14 @@ interface Task {
   assigned_to: string
 }
 
+
 interface EmployeeStats {
   total_assigned: number
   in_progress: number
   completed: number
   overdue: number
 }
+
 
 export default function EmployeeDashboard() {
   const [stats, setStats] = useState<EmployeeStats>({
@@ -33,21 +37,26 @@ export default function EmployeeDashboard() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
 
+
   useEffect(() => {
     const userData = localStorage.getItem('user')
     if (userData) setUser(JSON.parse(userData))
 
+
     const fetchTasks = async () => {
       try {
         const token = localStorage.getItem('access_token')
-        const response = await fetch('http://localhost:8000/api/tasks', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
           headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         })
+
 
         if (response.ok) {
           const allTasks = await response.json()
           const myTasks = allTasks.filter((t: Task) => t.assigned_to === JSON.parse(userData || '{}')._id)
           setTasks(myTasks.slice(0, 5)) // Show recent 5 tasks
+
 
           const now = new Date()
           setStats({
@@ -64,8 +73,10 @@ export default function EmployeeDashboard() {
       }
     }
 
+
     fetchTasks()
   }, [])
+
 
   const StatCard = ({ title, value, icon, color }: any) => (
     <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 hover:border-slate-600 transition">
@@ -79,6 +90,7 @@ export default function EmployeeDashboard() {
     </Card>
   )
 
+
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, string> = {
       urgent: 'text-red-400 bg-red-900/20',
@@ -89,6 +101,7 @@ export default function EmployeeDashboard() {
     return colors[priority] || 'text-slate-400 bg-slate-900/20'
   }
 
+
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       completed: 'text-green-400 bg-green-900/20',
@@ -98,6 +111,7 @@ export default function EmployeeDashboard() {
     }
     return colors[status] || 'text-slate-400 bg-slate-900/20'
   }
+
 
   return (
     <div className="space-y-8">
@@ -115,6 +129,7 @@ export default function EmployeeDashboard() {
         </div>
       </div>
 
+
       {/* Stats */}
       {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -124,6 +139,7 @@ export default function EmployeeDashboard() {
           <StatCard title="Overdue" value={stats.overdue} icon="⚠️" color="text-red-400" />
         </div>
       )}
+
 
       {/* Recent Tasks */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -172,6 +188,7 @@ export default function EmployeeDashboard() {
           </Card>
         </div>
 
+
         {/* Quick Actions */}
         <Card className="p-6 bg-slate-800 border-slate-700 h-fit">
           <h3 className="text-lg font-bold text-white mb-4">Quick Actions</h3>
@@ -194,6 +211,7 @@ export default function EmployeeDashboard() {
           </div>
         </Card>
       </div>
+
 
       {/* Completion Progress */}
       {stats.total_assigned > 0 && (

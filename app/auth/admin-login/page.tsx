@@ -1,5 +1,6 @@
 'use client'
 
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { ShieldIcon, AlertCircle, Eye, EyeOff } from 'lucide-react'
+
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -16,22 +18,27 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
+
     try {
-      const response = await fetch('http://localhost:8000/api/auth/login', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       })
+
 
       if (!response.ok) {
         const data = await response.json()
         throw new Error(data.detail || 'Invalid credentials')
       }
+
 
       const data = await response.json()
       
@@ -40,6 +47,7 @@ export default function AdminLoginPage() {
         setLoading(false)
         return
       }
+
 
       localStorage.setItem('access_token', data.access_token)
       localStorage.setItem('user', JSON.stringify(data.user))
@@ -55,6 +63,7 @@ export default function AdminLoginPage() {
     }
   }
 
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center px-4">
       {/* Background decoration */}
@@ -62,6 +71,7 @@ export default function AdminLoginPage() {
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
       </div>
+
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-md">
@@ -75,6 +85,7 @@ export default function AdminLoginPage() {
           <h1 className="text-3xl font-bold text-center text-white mb-2">Admin Login</h1>
           <p className="text-center text-slate-400 mb-8">Administrative access required</p>
 
+
           <form onSubmit={handleLogin} className="space-y-5">
             {error && (
               <div className="p-4 bg-red-500/10 border border-red-500/50 text-red-400 rounded-lg flex items-start gap-3">
@@ -82,6 +93,7 @@ export default function AdminLoginPage() {
                 <p className="text-sm">{error}</p>
               </div>
             )}
+
 
             <div>
               <label className="block text-sm font-semibold text-slate-200 mb-2">
@@ -96,6 +108,7 @@ export default function AdminLoginPage() {
                 required
               />
             </div>
+
 
             <div>
               <label className="block text-sm font-semibold text-slate-200 mb-2">
@@ -120,6 +133,7 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
+
             <Button
               type="submit"
               disabled={loading}
@@ -128,6 +142,7 @@ export default function AdminLoginPage() {
               {loading ? 'Signing in...' : 'Sign in as Admin'}
             </Button>
           </form>
+
 
 
           {/* Footer Links */}
@@ -146,6 +161,7 @@ export default function AdminLoginPage() {
             </Link>
           </div>
         </Card>
+
 
         {/* Security Badge */}
         <div className="mt-6 text-center text-xs text-slate-400">

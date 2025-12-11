@@ -1,23 +1,27 @@
 'use client'
 
+
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
+
 export default function LeadDetailPage() {
   const { id } = useParams()
   const [lead, setLead] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
+
   async function fetchLead() {
     setLoading(true)
     try {
-      const res = await fetch(`/api/leads/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
+        credentials: 'include',
       })
       if (res.ok) {
         const data = await res.json()
@@ -31,12 +35,15 @@ export default function LeadDetailPage() {
     setLoading(false)
   }
 
+
   useEffect(() => {
     fetchLead()
   }, [id])
 
+
   if (loading) return <p>Loading lead details...</p>
   if (!lead) return <p>Lead not found.</p>
+
 
   return (
     <div className="p-6 max-w-3xl mx-auto">

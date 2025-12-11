@@ -40,8 +40,9 @@ export default function TasksPage() {
     const fetchTasks = async () => {
       try {
         const token = localStorage.getItem('access_token')
-        const response = await fetch('http://localhost:8000/api/tasks', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
           headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         })
 
         if (response.ok) {
@@ -292,14 +293,21 @@ export default function TasksPage() {
                       </div>
                       <p className="text-slate-400 text-sm mb-3 line-clamp-2">{task.description}</p>
                       <div className="flex gap-2 flex-wrap">
-                        <Badge className={`${getPriorityColor(task.priority).bg} ${getPriorityColor(task.priority).text} border-current/20 text-xs`}>
+                        <Badge
+                          className={`${getPriorityColor(task.priority).bg} ${getPriorityColor(task.priority).text} border-current/20 text-xs`}
+                        >
                           {task.priority}
                         </Badge>
-                        <Badge className={`${getStatusColor(task.status).bg} ${getStatusColor(task.status).text} border-current/20 text-xs`}>
+                        <Badge
+                          className={`${getStatusColor(task.status).bg} ${getStatusColor(task.status).text} border-current/20 text-xs`}
+                        >
                           {task.status.replace('_', ' ')}
                         </Badge>
                         {task.tags?.map((tag) => (
-                          <Badge key={tag} className="bg-purple-500/10 text-purple-400 border-purple-500/30 text-xs">
+                          <Badge
+                            key={tag}
+                            className="bg-purple-500/10 text-purple-400 border-purple-500/30 text-xs"
+                          >
                             {tag}
                           </Badge>
                         ))}
@@ -319,7 +327,7 @@ export default function TasksPage() {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6">
+            <div className="flex items-center justify_between mt-6">
               <div className="text-slate-400 text-sm">
                 Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
                 {Math.min(pagination.page * pagination.limit, filteredTasks.length)} of{' '}
@@ -329,7 +337,9 @@ export default function TasksPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setPagination({ ...pagination, page: Math.max(1, pagination.page - 1) })}
+                  onClick={() =>
+                    setPagination({ ...pagination, page: Math.max(1, pagination.page - 1) })
+                  }
                   disabled={pagination.page === 1}
                   className="border-slate-600 disabled:opacity-50"
                 >
@@ -351,7 +361,12 @@ export default function TasksPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setPagination({ ...pagination, page: Math.min(totalPages, pagination.page + 1) })}
+                  onClick={() =>
+                    setPagination({
+                      ...pagination,
+                      page: Math.min(totalPages, pagination.page + 1),
+                    })
+                  }
                   disabled={pagination.page === totalPages}
                   className="border-slate-600 disabled:opacity-50"
                 >

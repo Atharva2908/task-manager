@@ -1,5 +1,6 @@
 'use client'
 
+
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -7,11 +8,13 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Settings, Users, Bell, Shield } from 'lucide-react'
 
+
 interface DepartmentSettings {
   _id?: string
   name: string
   manager: string
 }
+
 
 interface SystemSettings {
   max_file_size: number
@@ -19,6 +22,7 @@ interface SystemSettings {
   auto_reminder_days: number
   task_auto_archive_days: number
 }
+
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState('system')
@@ -39,13 +43,16 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState('')
 
+
   useEffect(() => {
     const fetchSettings = async () => {
       try {
         const token = localStorage.getItem('access_token')
-        const response = await fetch('http://localhost:8000/api/settings', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings`, {
           headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         })
+
 
         if (response.ok) {
           const data = await response.json()
@@ -58,25 +65,29 @@ export default function AdminSettingsPage() {
       }
     }
 
+
     fetchSettings()
   }, [])
+
 
   const saveSettings = async () => {
     setLoading(true)
     setSuccess('')
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch('http://localhost:8000/api/settings', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           system: settings,
           email: emailConfig,
         }),
       })
+
 
       if (response.ok) {
         setSuccess('Settings updated successfully!')
@@ -88,19 +99,23 @@ export default function AdminSettingsPage() {
     }
   }
 
+
   const addDepartment = async () => {
     if (!newDept.name) return
 
+
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch('http://localhost:8000/api/departments', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/departments`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(newDept),
       })
+
 
       if (response.ok) {
         const dept = await response.json()
@@ -113,18 +128,21 @@ export default function AdminSettingsPage() {
     }
   }
 
+
   const deleteDepartment = async (deptId: string) => {
     try {
       const token = localStorage.getItem('access_token')
-      await fetch(`http://localhost:8000/api/departments/${deptId}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/departments/${deptId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       setDepartments(departments.filter((d) => d._id !== deptId))
     } catch (error) {
       console.error('Failed to delete department:', error)
     }
   }
+
 
   return (
     <div className="space-y-6">
@@ -135,6 +153,7 @@ export default function AdminSettingsPage() {
         </h1>
         <p className="text-slate-400 text-sm mt-1">System configuration and management</p>
       </div>
+
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-slate-800 border-b border-slate-700">
@@ -155,6 +174,7 @@ export default function AdminSettingsPage() {
             Security
           </TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="system" className="space-y-4">
           <Card className="p-6 bg-slate-800 border-slate-700">
@@ -177,6 +197,7 @@ export default function AdminSettingsPage() {
                 />
               </div>
 
+
               <div>
                 <label className="block text-sm font-medium text-slate-200 mb-2">
                   Auto Reminder Days Before Deadline
@@ -188,6 +209,7 @@ export default function AdminSettingsPage() {
                   className="bg-slate-700 border-slate-600 text-white"
                 />
               </div>
+
 
               <div>
                 <label className="block text-sm font-medium text-slate-200 mb-2">
@@ -201,6 +223,7 @@ export default function AdminSettingsPage() {
                 />
               </div>
 
+
               <div className="flex items-center gap-4 p-4 bg-slate-700/50 rounded">
                 <input
                   type="checkbox"
@@ -210,6 +233,7 @@ export default function AdminSettingsPage() {
                 />
                 <label className="text-slate-200">Enable Email Notifications System-wide</label>
               </div>
+
 
               <Button
                 onClick={saveSettings}
@@ -222,9 +246,11 @@ export default function AdminSettingsPage() {
           </Card>
         </TabsContent>
 
+
         <TabsContent value="departments" className="space-y-4">
           <Card className="p-6 bg-slate-800 border-slate-700">
             <h2 className="text-xl font-bold text-white mb-6">Department Management</h2>
+
 
             <div className="space-y-4 mb-6">
               <div>
@@ -239,6 +265,7 @@ export default function AdminSettingsPage() {
                 />
               </div>
 
+
               <div>
                 <label className="block text-sm font-medium text-slate-200 mb-2">
                   Department Manager
@@ -251,6 +278,7 @@ export default function AdminSettingsPage() {
                 />
               </div>
 
+
               <Button
                 onClick={addDepartment}
                 className="bg-green-600 hover:bg-green-700 text-white"
@@ -258,6 +286,7 @@ export default function AdminSettingsPage() {
                 Add Department
               </Button>
             </div>
+
 
             <div className="space-y-2">
               {departments.map((dept) => (
@@ -280,9 +309,11 @@ export default function AdminSettingsPage() {
           </Card>
         </TabsContent>
 
+
         <TabsContent value="email" className="space-y-4">
           <Card className="p-6 bg-slate-800 border-slate-700">
             <h2 className="text-xl font-bold text-white mb-6">Email Configuration</h2>
+
 
             <div className="space-y-4">
               <div>
@@ -296,6 +327,7 @@ export default function AdminSettingsPage() {
                 />
               </div>
 
+
               <div>
                 <label className="block text-sm font-medium text-slate-200 mb-2">
                   SMTP Port
@@ -307,6 +339,7 @@ export default function AdminSettingsPage() {
                   className="bg-slate-700 border-slate-600 text-white"
                 />
               </div>
+
 
               <div>
                 <label className="block text-sm font-medium text-slate-200 mb-2">
@@ -320,6 +353,7 @@ export default function AdminSettingsPage() {
                 />
               </div>
 
+
               <div>
                 <label className="block text-sm font-medium text-slate-200 mb-2">
                   Sender Name
@@ -331,6 +365,7 @@ export default function AdminSettingsPage() {
                 />
               </div>
 
+
               <Button
                 onClick={saveSettings}
                 disabled={loading}
@@ -341,6 +376,7 @@ export default function AdminSettingsPage() {
             </div>
           </Card>
         </TabsContent>
+
 
         <TabsContent value="security" className="space-y-4">
           <Card className="p-6 bg-slate-800 border-slate-700">
@@ -356,6 +392,7 @@ export default function AdminSettingsPage() {
                 </Button>
               </div>
 
+
               <div className="p-4 bg-slate-700/50 rounded">
                 <p className="text-white font-semibold mb-2">Audit Logs</p>
                 <p className="text-slate-400 text-sm mb-4">
@@ -365,6 +402,7 @@ export default function AdminSettingsPage() {
                   View Audit Logs
                 </Button>
               </div>
+
 
               <div className="p-4 bg-slate-700/50 rounded">
                 <p className="text-white font-semibold mb-2">Backup Settings</p>

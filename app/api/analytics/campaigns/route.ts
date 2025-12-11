@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server"
 
+
 export async function GET(request: Request) {
   try {
-    const res = await fetch('http://localhost:8000/api/analytics/campaigns/overview', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/campaigns/overview`, {
       headers: {
         'Authorization': request.headers.get('Authorization') || '',
       },
+      credentials: 'include',
     })
     const data = await res.json()
     return NextResponse.json(data)

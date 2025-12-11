@@ -39,20 +39,25 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch('http://localhost:8000/api/users', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/users`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: 'include',
+        }
+      )
 
       if (response.ok) {
         const data = await response.json()
         setUsers(data)
-        
-        // Extract unique departments
-        const depts = [...new Set(data.map((u: User) => u.department).filter(Boolean))]
+
+        const depts = [
+          ...new Set(data.map((u: User) => u.department).filter(Boolean)),
+        ]
         setDepartments(depts)
-        
+
         setFilteredUsers(data)
       }
     } catch (error) {
@@ -72,7 +77,8 @@ export default function UsersPage() {
           .includes(search.toLowerCase())
 
       const matchesRole = roleFilter === 'all' || user.role === roleFilter
-      const matchesDepartment = departmentFilter === 'all' || user.department === departmentFilter
+      const matchesDepartment =
+        departmentFilter === 'all' || user.department === departmentFilter
 
       return matchesSearch && matchesRole && matchesDepartment
     })
@@ -81,9 +87,9 @@ export default function UsersPage() {
   }, [search, roleFilter, departmentFilter, users])
 
   const toggleUserSelection = (userId: string) => {
-    setSelectedUsers(prev =>
+    setSelectedUsers((prev) =>
       prev.includes(userId)
-        ? prev.filter(id => id !== userId)
+        ? prev.filter((id) => id !== userId)
         : [...prev, userId]
     )
   }
@@ -93,13 +99,14 @@ export default function UsersPage() {
     try {
       const token = localStorage.getItem('access_token')
       await Promise.all(
-        selectedUsers.map(userId =>
-          fetch(`http://localhost:8000/api/users/${userId}`, {
+        selectedUsers.map((userId) =>
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${userId}`, {
             method: 'PUT',
             headers: {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
+            credentials: 'include',
             body: JSON.stringify({ is_active: true }),
           })
         )
@@ -118,13 +125,14 @@ export default function UsersPage() {
     try {
       const token = localStorage.getItem('access_token')
       await Promise.all(
-        selectedUsers.map(userId =>
-          fetch(`http://localhost:8000/api/users/${userId}`, {
+        selectedUsers.map((userId) =>
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${userId}`, {
             method: 'PUT',
             headers: {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
+            credentials: 'include',
             body: JSON.stringify({ is_active: false }),
           })
         )
@@ -160,7 +168,9 @@ export default function UsersPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-4xl font-bold text-white">Employee Management</h1>
-          <p className="text-slate-400 mt-2">Manage team members and permissions</p>
+          <p className="text-slate-400 mt-2">
+            Manage team members and permissions
+          </p>
         </div>
         <Link href="/auth/signup">
           <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
@@ -195,8 +205,10 @@ export default function UsersPage() {
           className="px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:border-blue-500"
         >
           <option value="all">All Departments</option>
-          {departments.map(dept => (
-            <option key={dept} value={dept}>{dept}</option>
+          {departments.map((dept) => (
+            <option key={dept} value={dept}>
+              {dept}
+            </option>
           ))}
         </select>
 
@@ -215,14 +227,22 @@ export default function UsersPage() {
               disabled={actionLoading}
               className="bg-green-600 hover:bg-green-700 text-white text-sm"
             >
-              {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : 'Activate'}
+              {actionLoading ? (
+                <Loader className="w-4 h-4 animate-spin" />
+              ) : (
+                'Activate'
+              )}
             </Button>
             <Button
               onClick={handleBulkDeactivate}
               disabled={actionLoading}
               className="bg-orange-600 hover:bg-orange-700 text-white text-sm"
             >
-              {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : 'Deactivate'}
+              {actionLoading ? (
+                <Loader className="w-4 h-4 animate-spin" />
+              ) : (
+                'Deactivate'
+              )}
             </Button>
             <Button
               onClick={() => setSelectedUsers([])}
@@ -238,7 +258,9 @@ export default function UsersPage() {
 
       {/* Users Table */}
       {loading ? (
-        <div className="text-center text-slate-400 py-8">Loading employees...</div>
+        <div className="text-center text-slate-400 py-8">
+          Loading employees...
+        </div>
       ) : filteredUsers.length === 0 ? (
         <Card className="p-12 bg-slate-800 border-slate-700 text-center">
           <p className="text-slate-400">No employees found</p>
@@ -252,10 +274,13 @@ export default function UsersPage() {
                   <th className="px-4 py-3 text-left">
                     <input
                       type="checkbox"
-                      checked={selectedUsers.length === filteredUsers.length}
+                      checked={
+                        filteredUsers.length > 0 &&
+                        selectedUsers.length === filteredUsers.length
+                      }
                       onChange={(e) =>
                         e.target.checked
-                          ? setSelectedUsers(filteredUsers.map(u => u._id))
+                          ? setSelectedUsers(filteredUsers.map((u) => u._id))
                           : setSelectedUsers([])
                       }
                       className="w-4 h-4 rounded"
@@ -264,15 +289,24 @@ export default function UsersPage() {
                   <th className="px-4 py-3 text-left font-semibold">Name</th>
                   <th className="px-4 py-3 text-left font-semibold">Email</th>
                   <th className="px-4 py-3 text-left font-semibold">Role</th>
-                  <th className="px-4 py-3 text-left font-semibold">Department</th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Department
+                  </th>
                   <th className="px-4 py-3 text-left font-semibold">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold">Last Login</th>
-                  <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Last Login
+                  </th>
+                  <th className="px-4 py-3 text-right font-semibold">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.map((user) => (
-                  <tr key={user._id} className="border-b border-slate-700 hover:bg-slate-700/50 transition">
+                  <tr
+                    key={user._id}
+                    className="border-b border-slate-700 hover:bg-slate-700/50 transition"
+                  >
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
@@ -286,15 +320,24 @@ export default function UsersPage() {
                     </td>
                     <td className="px-4 py-3">{user.email}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-3 py-1 text-xs rounded border ${getRoleColor(user.role)}`}>
-                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                      <span
+                        className={`px-3 py-1 text-xs rounded border ${getRoleColor(
+                          user.role
+                        )}`}
+                      >
+                        {user.role.charAt(0).toUpperCase() +
+                          user.role.slice(1)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-400">
                       {user.department || '-'}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-3 py-1 text-xs rounded border ${getStatusColor(user.is_active)}`}>
+                      <span
+                        className={`px-3 py-1 text-xs rounded border ${getStatusColor(
+                          user.is_active
+                        )}`}
+                      >
                         {user.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>

@@ -1,10 +1,12 @@
 'use client'
 
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
+
 
 export default function DailyMetricsCreatePage() {
   const [campaigns, setCampaigns] = useState([])
@@ -14,10 +16,12 @@ export default function DailyMetricsCreatePage() {
   const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
 
+
   useEffect(() => {
     async function fetchCampaigns() {
-      const res = await fetch('/api/campaigns', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/campaigns`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+        credentials: 'include',
       })
       const data = await res.json()
       setCampaigns(data)
@@ -25,17 +29,19 @@ export default function DailyMetricsCreatePage() {
     fetchCampaigns()
   }, [])
 
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedCampaign) return alert('Select a campaign')
     setSubmitting(true)
     try {
-      const res = await fetch(`/api/daily-metrics/campaigns/${selectedCampaign}/daily_metrics`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/daily-metrics/campaigns/${selectedCampaign}/daily_metrics`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           daily_calling_target: callingTarget,
           daily_data_target: dataTarget,
@@ -53,9 +59,11 @@ export default function DailyMetricsCreatePage() {
     setSubmitting(false)
   }
 
+
   return (
     <form onSubmit={handleSubmit} className="max-w-md mx-auto p-6 space-y-6 border rounded">
       <h1 className="text-2xl font-bold mb-4">Create Daily Campaign Metrics</h1>
+
 
       <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
         <SelectTrigger>
@@ -69,6 +77,7 @@ export default function DailyMetricsCreatePage() {
           ))}
         </SelectContent>
       </Select>
+
 
       <Input
         type="number"
@@ -86,6 +95,7 @@ export default function DailyMetricsCreatePage() {
         min={0}
         required
       />
+
 
       <Button type="submit" disabled={submitting}>
         {submitting ? 'Creating...' : 'Create Targets'}

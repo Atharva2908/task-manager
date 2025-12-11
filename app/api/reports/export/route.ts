@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+
 export async function GET(request: NextRequest) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '')
   const format = request.nextUrl.searchParams.get('format') || 'csv'
+
 
   if (!token) {
     return NextResponse.json({ detail: 'Unauthorized' }, { status: 401 })
   }
 
+
   try {
-    const response = await fetch(`http://localhost:8000/api/reports/export?format=${format}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/export?format=${format}`, {
       headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include',
     })
 
+
     if (!response.ok) throw new Error('Failed to export report')
+
 
     const blob = await response.arrayBuffer()
     return new NextResponse(blob, {

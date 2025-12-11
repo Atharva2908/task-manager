@@ -1,9 +1,11 @@
 'use client'
 
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
+
 
 export default function DailyMetricsApprovePage() {
   const [campaigns, setCampaigns] = useState([])
@@ -12,12 +14,14 @@ export default function DailyMetricsApprovePage() {
   const [approving, setApproving] = useState(false)
   const router = useRouter()
 
+
   useEffect(() => {
     async function fetchCampaigns() {
-      const res = await fetch('/api/campaigns', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/campaigns`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
+        credentials: 'include',
       })
       const data = await res.json()
       setCampaigns(data)
@@ -25,11 +29,13 @@ export default function DailyMetricsApprovePage() {
     fetchCampaigns()
   }, [])
 
+
   useEffect(() => {
     if (!selectedCampaign) return
     async function fetchMetrics() {
-      const res = await fetch(`/api/daily-metrics/campaigns/${selectedCampaign}/daily_metrics`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/daily-metrics/campaigns/${selectedCampaign}/daily_metrics`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+        credentials: 'include',
       })
       if (res.ok) {
         const data = await res.json()
@@ -39,15 +45,17 @@ export default function DailyMetricsApprovePage() {
     fetchMetrics()
   }, [selectedCampaign])
 
+
   async function handleApprove() {
     if (!selectedCampaign) return alert('Select a campaign')
     setApproving(true)
     try {
-      const res = await fetch(`/api/daily-metrics/campaigns/${selectedCampaign}/daily_metrics/approve`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/daily-metrics/campaigns/${selectedCampaign}/daily_metrics/approve`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
+        credentials: 'include',
       })
       if (res.ok) {
         alert('Metrics approved')
@@ -61,9 +69,11 @@ export default function DailyMetricsApprovePage() {
     setApproving(false)
   }
 
+
   return (
     <div className="max-w-xl mx-auto p-6 space-y-6 border rounded">
       <h1 className="text-2xl font-bold mb-4">Approve Daily Campaign Metrics</h1>
+
 
       <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
         <SelectTrigger>
@@ -75,6 +85,7 @@ export default function DailyMetricsApprovePage() {
           ))}
         </SelectContent>
       </Select>
+
 
       {metrics && (
         <div className="space-y-2 mt-4">
@@ -90,6 +101,7 @@ export default function DailyMetricsApprovePage() {
           {/* Optional: Disable inputs after approval if implementing locking */}
         </div>
       )}
+
 
       <Button onClick={handleApprove} disabled={approving || !metrics}>
         {approving ? 'Approving…' : 'Approve Metrics'}

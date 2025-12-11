@@ -1,11 +1,13 @@
 'use client'
 
+
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react'
+
 
 interface Task {
   _id: string
@@ -30,6 +32,7 @@ interface Task {
   approval_notes?: string
 }
 
+
 export default function TaskApprovalsPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([])
@@ -39,16 +42,20 @@ export default function TaskApprovalsPage() {
   const [approvalNotes, setApprovalNotes] = useState('')
   const [processingId, setProcessingId] = useState<string | null>(null)
 
+
   useEffect(() => {
     fetchTasks()
   }, [])
 
+
   const fetchTasks = async () => {
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch('http://localhost:8000/api/tasks?requires_approval=true', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks?requires_approval=true`, {
         headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
+
 
       if (response.ok) {
         const data = await response.json()
@@ -62,26 +69,30 @@ export default function TaskApprovalsPage() {
     }
   }
 
+
   const handleFilterChange = (newFilter: 'pending' | 'approved' | 'rejected') => {
     setFilter(newFilter)
     setFilteredTasks(tasks.filter((t) => t.approval_status === newFilter))
   }
 
+
   const handleApprove = async (taskId: string) => {
     setProcessingId(taskId)
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`http://localhost:8000/api/tasks/${taskId}/approve`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}/approve`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           approval_status: 'approved',
           approval_notes: approvalNotes,
         }),
       })
+
 
       if (response.ok) {
         await fetchTasks()
@@ -95,6 +106,7 @@ export default function TaskApprovalsPage() {
     }
   }
 
+
   const handleReject = async (taskId: string) => {
     if (!approvalNotes.trim()) {
       alert('Please provide rejection reason')
@@ -104,17 +116,19 @@ export default function TaskApprovalsPage() {
     setProcessingId(taskId)
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`http://localhost:8000/api/tasks/${taskId}/approve`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}/approve`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           approval_status: 'rejected',
           approval_notes: approvalNotes,
         }),
       })
+
 
       if (response.ok) {
         await fetchTasks()
@@ -128,6 +142,7 @@ export default function TaskApprovalsPage() {
     }
   }
 
+
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, string> = {
       urgent: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -137,6 +152,7 @@ export default function TaskApprovalsPage() {
     }
     return colors[priority] || 'bg-slate-500/20 text-slate-400 border-slate-500/30'
   }
+
 
   const getApprovalStatusColor = (status?: string) => {
     switch (status) {
@@ -149,12 +165,14 @@ export default function TaskApprovalsPage() {
     }
   }
 
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-4xl font-bold text-white">Task Approvals</h1>
         <p className="text-slate-400 mt-2">Review and approve tasks before employees start working</p>
       </div>
+
 
       {/* Filter Stats */}
       <div className="grid grid-cols-3 gap-4">
@@ -177,6 +195,7 @@ export default function TaskApprovalsPage() {
           </button>
         ))}
       </div>
+
 
       {loading ? (
         <div className="text-center text-slate-400 py-8">Loading approval tasks...</div>
@@ -223,6 +242,7 @@ export default function TaskApprovalsPage() {
                 </div>
               </div>
 
+
               {/* Approval Panel */}
               {selectedTask?._id === task._id && (
                 <div className="mt-6 pt-6 border-t border-slate-700 space-y-4">
@@ -238,6 +258,7 @@ export default function TaskApprovalsPage() {
                       className="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:outline-none focus:border-blue-500 placeholder-slate-500 resize-none"
                     />
                   </div>
+
 
                   {task.approval_status === 'pending' && (
                     <div className="flex gap-3">

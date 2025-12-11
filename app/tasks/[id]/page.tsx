@@ -1,5 +1,6 @@
 'use client'
 
+
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { ArrowLeft, Edit, MessageSquare, Clock, AlertCircle, CheckCircle, Upload, FileText, X, MoreVertical, Play, Pause, RotateCcw } from 'lucide-react'
+
 
 interface Task {
   _id: string
@@ -25,6 +27,7 @@ interface Task {
   attachments?: { id: string; name: string; url: string; size: number; type: string; uploaded_at: string }[]
 }
 
+
 interface Comment {
   _id: string
   content: string
@@ -33,6 +36,7 @@ interface Comment {
   mentions?: string[]
   attachments?: { id: string; name: string; url: string; type: string }[]
 }
+
 
 interface Activity {
   _id: string
@@ -43,6 +47,7 @@ interface Activity {
   new_value?: string
   created_at: string
 }
+
 
 export default function TaskDetailPage() {
   const params = useParams()
@@ -61,34 +66,43 @@ export default function TaskDetailPage() {
   const [manualTimeEntry, setManualTimeEntry] = useState('')
   const [uploadingFiles, setUploadingFiles] = useState(false)
 
+
   useEffect(() => {
     const userData = localStorage.getItem('user')
     if (userData) setUser(JSON.parse(userData))
 
+
     const fetchTask = async () => {
       try {
         const token = localStorage.getItem('access_token')
-        const response = await fetch(`http://localhost:8000/api/tasks/${params.id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${params.id}`, {
           headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         })
+
 
         if (response.ok) {
           const taskData = await response.json()
           setTask(taskData)
 
+
           const [commentsResponse, activitiesResponse] = await Promise.all([
-            fetch(`http://localhost:8000/api/comments/task/${params.id}`, {
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/comments/task/${params.id}`, {
               headers: { Authorization: `Bearer ${token}` },
+              credentials: 'include',
             }),
-            fetch(`http://localhost:8000/api/tasks/${params.id}/activity`, {
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${params.id}/activity`, {
               headers: { Authorization: `Bearer ${token}` },
+              credentials: 'include',
             }),
           ])
+
 
           if (commentsResponse.ok) {
             const commentsData = await commentsResponse.json()
             setComments(commentsData)
           }
+
 
           if (activitiesResponse.ok) {
             const activitiesData = await activitiesResponse.json()
@@ -102,8 +116,10 @@ export default function TaskDetailPage() {
       }
     }
 
+
     fetchTask()
   }, [params.id])
+
 
   useEffect(() => {
     let interval: NodeJS.Timeout
@@ -115,26 +131,31 @@ export default function TaskDetailPage() {
     return () => clearInterval(interval)
   }, [timerActive])
 
+
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newComment.trim()) return
 
+
     setSubmitting(true)
+
 
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch('http://localhost:8000/api/comments', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/comments`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           task_id: params.id,
           content: newComment,
           mentions: commentMentions,
         }),
       })
+
 
       if (response.ok) {
         const comment = await response.json()
@@ -149,17 +170,20 @@ export default function TaskDetailPage() {
     }
   }
 
+
   const handleStatusChange = async (newStatus: string) => {
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`http://localhost:8000/api/tasks/${params.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${params.id}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ status: newStatus }),
       })
+
 
       if (response.ok) {
         const updatedTask = await response.json()
@@ -171,23 +195,28 @@ export default function TaskDetailPage() {
     }
   }
 
+
   const handleStartTimer = () => {
     setTimerActive(true)
   }
 
+
   const handleStopTimer = async () => {
     setTimerActive(false)
 
+
     try {
       const token = localStorage.getItem('access_token')
-      await fetch(`http://localhost:8000/api/tasks/${params.id}/time-logs`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${params.id}/time-logs`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ duration: timerDuration }),
       })
+
 
       if (task) {
         setTask({
@@ -196,25 +225,30 @@ export default function TaskDetailPage() {
         })
       }
 
+
       setTimerDuration(0)
     } catch (error) {
       console.error('[v0] Failed to log time:', error)
     }
   }
 
+
   const handleManualTimeEntry = async () => {
     if (!manualTimeEntry || isNaN(Number(manualTimeEntry))) return
 
+
     try {
       const token = localStorage.getItem('access_token')
-      await fetch(`http://localhost:8000/api/tasks/${params.id}/time-logs`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${params.id}/time-logs`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ duration: Number(manualTimeEntry) * 60 }),
       })
+
 
       if (task) {
         setTask({
@@ -223,33 +257,41 @@ export default function TaskDetailPage() {
         })
       }
 
+
       setManualTimeEntry('')
     } catch (error) {
       console.error('[v0] Failed to log manual time:', error)
     }
   }
 
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.currentTarget.files
     if (!files) return
 
+
     setUploadingFiles(true)
+
 
     try {
       const token = localStorage.getItem('access_token')
       const formData = new FormData()
 
+
       Array.from(files).forEach((file) => {
         formData.append('files', file)
       })
 
-      const response = await fetch(`http://localhost:8000/api/tasks/${params.id}/attachments`, {
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${params.id}/attachments`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: formData,
       })
+
 
       if (response.ok) {
         const updatedTask = await response.json()
@@ -262,6 +304,7 @@ export default function TaskDetailPage() {
     }
   }
 
+
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, { bg: string; text: string; border: string }> = {
       urgent: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/30' },
@@ -271,6 +314,7 @@ export default function TaskDetailPage() {
     }
     return colors[priority] || { bg: 'bg-slate-500/10', text: 'text-slate-400', border: 'border-slate-500/30' }
   }
+
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, { bg: string; text: string; border: string; label: string }> = {
@@ -283,10 +327,12 @@ export default function TaskDetailPage() {
     return colors[status] || { bg: 'bg-slate-500/10', text: 'text-slate-400', border: 'border-slate-500/30', label: 'Unknown' }
   }
 
+
   const isOverdue = (dueDate: string, status: string) => {
     if (status === 'completed' || !dueDate) return false
     return new Date(dueDate) < new Date()
   }
+
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
@@ -295,11 +341,13 @@ export default function TaskDetailPage() {
     return `${hours}h ${minutes}m ${secs}s`
   }
 
+
   const formatTimeShort = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
     return `${hours}h ${minutes}m`
   }
+
 
   if (loading) {
     return (
@@ -308,6 +356,7 @@ export default function TaskDetailPage() {
       </div>
     )
   }
+
 
   if (!task) {
     return (
@@ -323,8 +372,10 @@ export default function TaskDetailPage() {
     )
   }
 
+
   const statusColors = getStatusColor(task.status)
   const priorityColors = getPriorityColor(task.priority)
+
 
   return (
     <div className="space-y-6 pb-8">
@@ -357,6 +408,7 @@ export default function TaskDetailPage() {
         )}
       </div>
 
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
@@ -367,6 +419,7 @@ export default function TaskDetailPage() {
               {task.description || 'No description provided'}
             </p>
           </Card>
+
 
           {/* File Attachments */}
           <Card className="p-6 bg-slate-800 border-slate-700">
@@ -385,6 +438,7 @@ export default function TaskDetailPage() {
                 </Button>
               </label>
             </div>
+
 
             {task.attachments && task.attachments.length > 0 ? (
               <div className="space-y-2">
@@ -416,12 +470,14 @@ export default function TaskDetailPage() {
             )}
           </Card>
 
+
           {/* Comments */}
           <Card className="p-6 bg-slate-800 border-slate-700">
             <div className="flex items-center gap-2 mb-6">
               <MessageSquare className="w-5 h-5 text-blue-400" />
               <h2 className="text-xl font-bold text-white">Comments ({comments.length})</h2>
             </div>
+
 
             <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
               {comments.length === 0 ? (
@@ -454,6 +510,7 @@ export default function TaskDetailPage() {
               )}
             </div>
 
+
             <form onSubmit={handleAddComment} className="pt-6 border-t border-slate-700">
               <label className="block text-sm font-semibold text-slate-200 mb-3">Add a Comment</label>
               <textarea
@@ -472,6 +529,7 @@ export default function TaskDetailPage() {
               </Button>
             </form>
           </Card>
+
 
           {/* Activity Timeline */}
           {activities.length > 0 && (
@@ -505,6 +563,7 @@ export default function TaskDetailPage() {
           )}
         </div>
 
+
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Status */}
@@ -534,6 +593,7 @@ export default function TaskDetailPage() {
             </div>
           </Card>
 
+
           {/* Priority */}
           <Card className={`p-4 border ${priorityColors.bg} ${priorityColors.border}`}>
             <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase">Priority</label>
@@ -541,6 +601,7 @@ export default function TaskDetailPage() {
               {task.priority}
             </Badge>
           </Card>
+
 
           {/* Due Date */}
           <Card className="p-4 bg-slate-800 border-slate-700">
@@ -564,6 +625,7 @@ export default function TaskDetailPage() {
             )}
           </Card>
 
+
           {/* Time Tracking */}
           <Card className="p-4 bg-slate-800 border-slate-700 space-y-3">
             <div>
@@ -575,6 +637,7 @@ export default function TaskDetailPage() {
                 {task.time_logged > 0 ? formatTimeShort(task.time_logged) : 'No time logged'}
               </p>
             </div>
+
 
             {/* Timer */}
             <div className="pt-3 border-t border-slate-700">
@@ -596,6 +659,7 @@ export default function TaskDetailPage() {
                 )}
               </div>
             </div>
+
 
             {/* Manual Time Entry */}
             <div className="pt-3 border-t border-slate-700">
@@ -620,6 +684,7 @@ export default function TaskDetailPage() {
             </div>
           </Card>
 
+
           {/* Tags */}
           {task.tags && task.tags.length > 0 && (
             <Card className="p-4 bg-slate-800 border-slate-700">
@@ -633,6 +698,7 @@ export default function TaskDetailPage() {
               </div>
             </Card>
           )}
+
 
           {/* Metadata */}
           <Card className="p-4 bg-slate-800 border-slate-700">

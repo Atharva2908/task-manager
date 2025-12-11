@@ -1,11 +1,13 @@
 'use client'
 
+
 import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
+
 
 function ResetPasswordForm() {
   const router = useRouter()
@@ -17,6 +19,7 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
 
+
   useEffect(() => {
     const resetToken = searchParams.get('token')
     if (!resetToken) {
@@ -26,24 +29,40 @@ function ResetPasswordForm() {
     }
   }, [searchParams])
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
 
     if (password !== confirmPassword) {
       setError('Passwords do not match')
       return
     }
 
+
     if (password.length < 8) {
       setError('Password must be at least 8 characters')
       return
     }
 
+
     setLoading(true)
 
+
     try {
-      console.log('Resetting password with token:', token)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ token, new_password: password }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.detail || 'Failed to reset password')
+      }
+
       setSuccess(true)
 
       setTimeout(() => {
@@ -56,12 +75,14 @@ function ResetPasswordForm() {
     }
   }
 
+
   return (
     <Card className="p-8 bg-slate-900 border-slate-800">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Set New Password</h1>
         <p className="text-slate-400">Create a new password for your account</p>
       </div>
+
 
       {success ? (
         <div className="space-y-4">
@@ -78,6 +99,7 @@ function ResetPasswordForm() {
             </div>
           )}
 
+
           <div>
             <label className="block text-sm font-medium text-slate-200 mb-1">
               New Password
@@ -91,6 +113,7 @@ function ResetPasswordForm() {
               required
             />
           </div>
+
 
           <div>
             <label className="block text-sm font-medium text-slate-200 mb-1">
@@ -106,6 +129,7 @@ function ResetPasswordForm() {
             />
           </div>
 
+
           <Button
             type="submit"
             disabled={loading}
@@ -116,6 +140,7 @@ function ResetPasswordForm() {
         </form>
       )}
 
+
       <div className="mt-6 text-center text-slate-400">
         <Link href="/auth/login" className="text-blue-400 hover:text-blue-300">
           Back to sign in
@@ -124,6 +149,7 @@ function ResetPasswordForm() {
     </Card>
   )
 }
+
 
 export default function ResetPasswordPage() {
   return (

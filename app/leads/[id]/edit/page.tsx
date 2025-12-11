@@ -1,5 +1,6 @@
 'use client'
 
+
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
@@ -7,13 +8,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
+
 const leadSources = [
   "calling", "data_entry", "website", "referral", "social_media", "email_campaign", "event", "other",
 ]
 
+
 const leadStatuses = [
   "new", "contacted", "qualified", "disqualified", "converted",
 ]
+
 
 export default function EditLeadPage() {
   const { id } = useParams()
@@ -29,13 +33,15 @@ export default function EditLeadPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
+
   async function fetchLead() {
     setLoading(true)
     try {
-      const res = await fetch(`/api/leads/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
+        credentials: 'include',
       })
       const data = await res.json()
       setForm({
@@ -52,28 +58,33 @@ export default function EditLeadPage() {
     setLoading(false)
   }
 
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
+
 
   function handleSourceChange(value: string) {
     setForm({ ...form, source: value })
   }
 
+
   function handleStatusChange(value: string) {
     setForm({ ...form, status: value })
   }
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
     try {
-      const res = await fetch(`/api/leads/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
+        credentials: 'include',
         body: JSON.stringify(form),
       })
       if (res.ok) {
@@ -87,11 +98,14 @@ export default function EditLeadPage() {
     setSubmitting(false)
   }
 
+
   useEffect(() => {
     fetchLead()
   }, [id])
 
+
   if (loading) return <p>Loading...</p>
+
 
   return (
     <div className="max-w-md mx-auto p-6">
@@ -109,6 +123,7 @@ export default function EditLeadPage() {
         <Input type="tel" name="phone" placeholder="Phone" value={form.phone} onChange={handleChange} />
         <Input type="text" name="company" placeholder="Company" value={form.company} onChange={handleChange} />
 
+
         <Select value={form.source} onValueChange={handleSourceChange}>
           <SelectTrigger>
             <SelectValue placeholder="Select Lead Source" />
@@ -122,6 +137,7 @@ export default function EditLeadPage() {
           </SelectContent>
         </Select>
 
+
         <Select value={form.status} onValueChange={handleStatusChange}>
           <SelectTrigger>
             <SelectValue placeholder="Select Lead Status" />
@@ -134,6 +150,7 @@ export default function EditLeadPage() {
             ))}
           </SelectContent>
         </Select>
+
 
         <Button type="submit" disabled={submitting}>
           {submitting ? 'Saving…' : 'Save Changes'}
