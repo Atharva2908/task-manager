@@ -5,6 +5,7 @@ from app.security import hash_password, verify_password, create_access_token
 from app.database import get_db
 from bson.objectid import ObjectId
 
+
 router = APIRouter()
 
 
@@ -33,8 +34,11 @@ async def signup(request: UserCreate):
         "last_name": request.last_name,
         "hashed_password": hash_password(request.password),
         "role": request.role.value,
+        "department": getattr(request, 'department', None),  # ✅ Added department support
+        "phone": getattr(request, 'phone', None),           # ✅ Added phone support
         "is_active": True,
         "is_deleted": False,
+        "last_login": None,                                # ✅ Initialize last_login
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc)
     }
@@ -42,7 +46,7 @@ async def signup(request: UserCreate):
     result = await db.users.insert_one(user_data)
     user_data["_id"] = result.inserted_id
 
-    # ✅ FIX: Convert ObjectId → str
+    # ✅ Convert ObjectId → str
     user_data["_id"] = str(user_data["_id"])
     
     access_token = create_access_token({"sub": user_data["_id"], "email": request.email})
@@ -85,6 +89,17 @@ async def login(request: LoginRequest):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is inactive"
         )
+
+    # ✅ UPDATE last_login timestamp on successful login
+    current_time = datetime.now(timezone.utc)
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"last_login": current_time, "updated_at": current_time}}
+    )
+    
+    # Update user dict with new last_login timestamp
+    user["last_login"] = current_time
+    user["updated_at"] = current_time
 
     # Convert ObjectId before using it
     user["_id"] = str(user["_id"])

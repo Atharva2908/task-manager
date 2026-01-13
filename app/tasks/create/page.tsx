@@ -1,14 +1,17 @@
 'use client'
 
-
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, Plus, X } from 'lucide-react'
-
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Separator } from '@/components/ui/separator'
+import { AlertCircle, Plus, X, Clock, Tag, Calendar } from 'lucide-react'
 
 export default function CreateTaskPage() {
   const router = useRouter()
@@ -24,16 +27,14 @@ export default function CreateTaskPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     })
   }
-
 
   const addTag = () => {
     if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
@@ -45,14 +46,12 @@ export default function CreateTaskPage() {
     }
   }
 
-
   const removeTag = (tagToRemove: string) => {
     setFormData({
       ...formData,
       tags: formData.tags.filter(tag => tag !== tagToRemove),
     })
   }
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,9 +62,7 @@ export default function CreateTaskPage() {
       return
     }
 
-
     setLoading(true)
-
 
     try {
       const token = localStorage.getItem('access_token')
@@ -82,7 +79,6 @@ export default function CreateTaskPage() {
         }),
       })
 
-
       if (response.ok) {
         router.push('/tasks')
       } else {
@@ -96,200 +92,228 @@ export default function CreateTaskPage() {
     }
   }
 
-
-  const priorityColors = {
-    low: { bg: 'bg-green-500/20', border: 'border-green-500/30', text: 'text-green-400' },
-    medium: { bg: 'bg-yellow-500/20', border: 'border-yellow-500/30', text: 'text-yellow-400' },
-    high: { bg: 'bg-orange-500/20', border: 'border-orange-500/30', text: 'text-orange-400' },
-    urgent: { bg: 'bg-red-500/20', border: 'border-red-500/30', text: 'text-red-400' },
-  }
-
+  const priorityOptions = [
+    { value: 'low', label: 'Low', icon: '🟢' },
+    { value: 'medium', label: 'Medium', icon: '🟡' },
+    { value: 'high', label: 'High', icon: '🟠' },
+    { value: 'urgent', label: 'Urgent', icon: '🔴' },
+  ]
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-white mb-2">Create New Task</h1>
-        <p className="text-slate-400">Define a new task and assign it to your team</p>
-      </div>
-
-
-      <Card className="p-8 bg-slate-800 border-slate-700 shadow-xl">
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/50 text-red-400 rounded-lg flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <p className="text-sm">{error}</p>
-            </div>
-          )}
-
-
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-200 mb-2">
-              Task Title <span className="text-red-400">*</span>
-            </label>
-            <Input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Enter a clear, descriptive task title"
-              className="bg-slate-700 border-slate-600 text-white placeholder-slate-500 focus:border-blue-500 focus:ring-blue-500/20 text-base"
-              required
-            />
-            <p className="text-slate-500 text-xs mt-1">Be specific and concise</p>
-          </div>
-
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-200 mb-2">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Provide detailed information about this task, requirements, and any relevant context..."
-              rows={5}
-              className="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:outline-none focus:border-blue-500 focus:ring-blue-500/20 placeholder-slate-500 resize-none"
-            />
-          </div>
-
-
-          {/* Priority and Status */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="min-h-screen bg-background/50">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-3 bg-primary/10 p-4 rounded-2xl mb-6">
+            <Plus className="w-8 h-8 text-primary" />
             <div>
-              <label className="block text-sm font-semibold text-slate-200 mb-3">
-                Priority Level
-              </label>
+              <CardTitle className="text-3xl font-bold tracking-tight leading-tight">
+                Create New Task
+              </CardTitle>
+              <CardDescription className="text-lg">
+                Define task details and assign to your team
+              </CardDescription>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Form Card */}
+        <Card className="shadow-2xl border-0">
+          <CardContent className="p-8 lg:p-12">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="w-4 h-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Title Field */}
               <div className="space-y-2">
-                {Object.entries(priorityColors).map(([level, colors]) => (
-                  <label
-                    key={level}
-                    className={`flex items-center p-3 rounded-lg border cursor-pointer transition ${
-                      formData.priority === level
-                        ? `${colors.bg} ${colors.border} border-current`
-                        : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="priority"
-                      value={level}
-                      checked={formData.priority === level}
+                <Label htmlFor="title" className="text-base font-semibold">
+                  Task Title <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="Enter a clear, descriptive task title"
+                  className="h-14 text-lg placeholder:text-muted-foreground/70"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Be specific about what needs to be accomplished
+                </p>
+              </div>
+
+              {/* Description Field */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Provide detailed information about this task, requirements, context, and success criteria..."
+                  className="min-h-[120px] text-base placeholder:text-muted-foreground/70"
+                  rows={4}
+                />
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Tag className="w-3 h-3" />
+                  Include acceptance criteria and any relevant details
+                </p>
+              </div>
+
+              <Separator />
+
+              {/* Priority & Status */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Priority */}
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Priority
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {priorityOptions.map((option) => (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        variant={formData.priority === option.value ? "default" : "outline"}
+                        className={`h-14 justify-start gap-3 capitalize ${formData.priority === option.value ? 'shadow-lg shadow-primary/20' : ''}`}
+                        onClick={() => setFormData({ ...formData, priority: option.value })}
+                      >
+                        <span className="text-lg">{option.icon}</span>
+                        <span className="font-medium">{option.label}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold flex items-center gap-2">
+                    Initial Status
+                  </Label>
+                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                    <SelectTrigger className="h-14">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todo">To Do</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="on_hold">On Hold</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Due Date & Tags */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Due Date */}
+                <div className="space-y-3">
+                  <Label htmlFor="due_date" className="text-base font-semibold flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Due Date
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="due_date"
+                      name="due_date"
+                      type="datetime-local"
+                      value={formData.due_date}
                       onChange={handleChange}
-                      className="w-4 h-4"
+                      className="h-14 text-lg"
                     />
-                    <span className={`ml-3 capitalize font-medium ${formData.priority === level ? colors.text : 'text-slate-300'}`}>
-                      {level}
-                    </span>
-                  </label>
-                ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Optional. Tasks without due dates won't appear in deadline views
+                  </p>
+                </div>
+
+                {/* Tags */}
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold flex items-center gap-2">
+                    Tags
+                  </Label>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Input
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                        placeholder="Press Enter to add tag"
+                        className="flex-1 h-12"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={addTag}
+                        className="h-12 aspect-square p-0"
+                        disabled={!tagInput.trim()}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {formData.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {formData.tags.map((tag) => (
+                          <Badge 
+                            key={tag} 
+                            variant="secondary" 
+                            className="group relative px-3 py-1.5 text-xs font-medium"
+                          >
+                            {tag}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute -top-1 -right-1 h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removeTag(tag)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
 
+              <Separator className="my-8" />
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-200 mb-3">
-                Initial Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:outline-none focus:border-blue-500 focus:ring-blue-500/20"
-              >
-                <option value="todo">To Do</option>
-                <option value="in_progress">In Progress</option>
-                <option value="on_hold">On Hold</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
-          </div>
-
-
-          {/* Due Date */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-200 mb-2">
-              Due Date
-            </label>
-            <Input
-              type="datetime-local"
-              name="due_date"
-              value={formData.due_date}
-              onChange={handleChange}
-              className="bg-slate-700 border-slate-600 text-white focus:border-blue-500 focus:ring-blue-500/20"
-            />
-            <p className="text-slate-500 text-xs mt-1">Optional. Set a deadline for this task</p>
-          </div>
-
-
-          {/* Tags */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-200 mb-2">
-              Tags
-            </label>
-            <div className="flex gap-2 mb-3">
-              <Input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                placeholder="Add a tag and press Enter"
-                className="flex-1 bg-slate-700 border-slate-600 text-white placeholder-slate-500 focus:border-blue-500 focus:ring-blue-500/20"
-              />
-              <Button
-                type="button"
-                onClick={addTag}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            {formData.tags.length > 0 && (
-              <div className="flex gap-2 flex-wrap">
-                {formData.tags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    className="bg-blue-500/20 text-blue-300 border-blue-500/30 pl-3 pr-2 py-1 flex items-center gap-2"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => removeTag(tag)}
-                      className="hover:text-blue-200"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-6">
+                <Button
+                  type="submit"
+                  disabled={loading || !formData.title.trim()}
+                  className="flex-1 h-14 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-background border-t-primary animate-spin rounded-full mr-2" />
+                      Creating Task...
+                    </>
+                  ) : (
+                    'Create Task'
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-14 px-8 text-base"
+                  onClick={() => router.back()}
+                >
+                  Cancel
+                </Button>
               </div>
-            )}
-          </div>
-
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-6 border-t border-slate-700">
-            <Button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 rounded-lg transition-all"
-            >
-              {loading ? 'Creating Task...' : 'Create Task'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="border-slate-600 text-slate-300 hover:bg-slate-700 px-6"
-              onClick={() => router.back()}
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
