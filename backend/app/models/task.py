@@ -27,6 +27,7 @@ class TaskBase(BaseModel):
 
 class TaskCreate(TaskBase):
     pass
+attachments: Optional[List[str]] = []  # File URLs/paths
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None

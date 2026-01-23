@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import os
 from dotenv import load_dotenv
 from app.routes import leads, campaigns, lead_analytics
-
+from fastapi.staticfiles import StaticFiles
 # Load environment variables
 load_dotenv()
 
@@ -61,6 +61,22 @@ app.include_router(reports.router, prefix="/api/reports", tags=["Reports"])
 app.include_router(leads.router, prefix="/api/leads", tags=["Leads"])
 app.include_router(campaigns.router, prefix="/api/campaigns", tags=["Campaigns"])
 app.include_router(lead_analytics.router, prefix="/api/analytics", tags=["Analytics"])
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    print("🚀 Starting application...")
+    await connect_to_mongo()
+    
+    # ✅ CREATE UPLOADS DIRECTORY HERE
+    os.makedirs("uploads", exist_ok=True)
+    app.mount("/static", StaticFiles(directory="uploads"), name="static")
+    
+    print("✅ Connected to MongoDB + Static files mounted")
+    yield
+    # Shutdown
+    print("🛑 Shutting down application...")
+    await close_mongo_connection()
+    print("✅ Disconnected from MongoDB")
 
 # Root endpoint
 @app.get("/")

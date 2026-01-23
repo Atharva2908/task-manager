@@ -1,10 +1,13 @@
-from fastapi import APIRouter, HTTPException, status, Header
+from fastapi import APIRouter, HTTPException, status, Header, File, UploadFile
 from typing import List, Optional
 from app.models.task import TaskResponse, TaskCreate, TaskUpdate, TaskStatus, TaskPriority
 from app.security import verify_token, get_token_from_header
 from app.database import get_db
 from bson.objectid import ObjectId
 from datetime import datetime, timezone
+import os
+
+# ... your other imports
 
 router = APIRouter()
 
@@ -208,6 +211,8 @@ async def delete_task(task_id: str, authorization: Optional[str] = Header(None))
 
 @router.get("/my/list", response_model=List[TaskResponse])
 async def get_my_tasks(
+    skip: int = 0,
+    limit: int = 10,  # Add these
     status: Optional[str] = None,
     authorization: Optional[str] = Header(None)
 ):
@@ -219,5 +224,66 @@ async def get_my_tasks(
     if status:
         query["status"] = status
 
-    tasks = await db.tasks.find(query).to_list(length=100)
+    tasks = await db.tasks.find(query).skip(skip).limit(limit).to_list(length=limit)
     return [TaskResponse(**serialize_task(task)) for task in tasks]
+
+
+
+@router.post("/{task_id}/attachments")  # ← EXACT MATCH for your React call
+async def upload_task_attachments(
+    task_id: str,
+    attachments: List[UploadFile] = File(...),  # Multiple files
+    authorization: Optional[str] = Header(None)
+):
+    current_user = get_current_user_from_header(authorization)
+    db = get_db()
+    
+    # Validate task exists
+    try:
+        oid = ObjectId(task_id)
+    except:
+        raise HTTPException(400, "Invalid task ID")
+    
+    task = await db.tasks.find_one({"_id": oid, "is_deleted": False})
+    if not task:
+        raise HTTPException(404, "Task not found")
+    
+    uploaded_attachments = []
+    
+    # Create uploads directory
+    import os
+    os.makedirs("uploads", exist_ok=True)
+    
+    for file in attachments:
+        # Generate unique filename
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        filename = f"uploads/{task_id}_{timestamp}_{file.filename}"
+        
+        # Save file
+        contents = await file.read()
+        with open(filename, "wb") as f:
+            f.write(contents)
+        
+        # Create attachment record
+        attachment = {
+            "id": str(ObjectId()),  # For React interface
+            "name": file.filename,
+            "filename": filename,   # Server path
+            "url": f"/static/{os.path.basename(filename)}",  # Public URL
+            "size": len(contents),
+            "type": file.content_type or "application/octet-stream",
+            "uploaded_by": ObjectId(current_user.get("sub")),
+            "uploaded_at": datetime.now(timezone.utc)
+        }
+        
+        uploaded_attachments.append(attachment)
+        
+        # Add to task
+        await db.tasks.update_one(
+            {"_id": oid},
+            {"$push": {"attachments": attachment}}
+        )
+    
+    # Return updated task for React to refresh UI
+    updated_task = await db.tasks.find_one({"_id": oid})
+    return TaskResponse(**serialize_task(updated_task))

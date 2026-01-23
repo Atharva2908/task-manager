@@ -1,11 +1,9 @@
 'use client'
 
-
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-
 
 interface Task {
   _id: string
@@ -18,7 +16,6 @@ interface Task {
   created_at: string
 }
 
-
 interface User {
   _id: string
   first_name: string
@@ -26,19 +23,16 @@ interface User {
   email: string
 }
 
-
 export default function TaskAssignmentsPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [users, setUsers] = useState<Record<string, User>>({})
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
 
-
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('access_token')
-
 
         // Fetch tasks
         const tasksRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
@@ -49,7 +43,6 @@ export default function TaskAssignmentsPage() {
           const tasksData = await tasksRes.json()
           setTasks(tasksData)
         }
-
 
         // Fetch users
         const usersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
@@ -71,10 +64,8 @@ export default function TaskAssignmentsPage() {
       }
     }
 
-
     fetchData()
   }, [])
-
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -87,7 +78,6 @@ export default function TaskAssignmentsPage() {
     return colors[status] || 'text-slate-400 bg-slate-900/20'
   }
 
-
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, string> = {
       urgent: 'text-red-400 bg-red-900/20',
@@ -98,12 +88,37 @@ export default function TaskAssignmentsPage() {
     return colors[priority] || 'text-slate-400 bg-slate-900/20'
   }
 
-
   const filteredTasks = tasks.filter(task => {
     if (filter === 'all') return true
     return task.status === filter
   })
 
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm('Are you sure you want to delete this task?')) return
+
+    try {
+      const token = localStorage.getItem('access_token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`, {
+        method: 'DELETE',
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      })
+
+      if (response.ok) {
+        // Remove task from local state
+        setTasks(prevTasks => prevTasks.filter(task => task._id !== taskId))
+        alert('Task deleted successfully!')
+      } else {
+        alert('Failed to delete task')
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error)
+      alert('Error deleting task')
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -118,7 +133,6 @@ export default function TaskAssignmentsPage() {
           </Button>
         </Link>
       </div>
-
 
       {/* Filter Stats */}
       <div className="grid grid-cols-5 gap-4">
@@ -143,7 +157,6 @@ export default function TaskAssignmentsPage() {
           </button>
         ))}
       </div>
-
 
       {/* Tasks Table */}
       {loading ? (
@@ -201,12 +214,24 @@ export default function TaskAssignmentsPage() {
                           year: 'numeric',
                         })}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-right space-x-2">
                         <Link href={`/tasks/${task._id}`}>
-                          <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                          <Button 
+                            variant="outline" 
+                            className="border-slate-600 text-slate-300 hover:bg-slate-700 mr-2"
+                            size="sm"
+                          >
                             View
                           </Button>
                         </Link>
+                        <Button
+                          variant="destructive"
+                          className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1"
+                          size="sm"
+                          onClick={() => handleDeleteTask(task._id)}
+                        >
+                          Delete
+                        </Button>
                       </td>
                     </tr>
                   )

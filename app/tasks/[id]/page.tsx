@@ -1,14 +1,33 @@
 'use client'
 
-
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Separator } from '@/components/ui/separator'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { 
+  ArrowLeft, 
+  Edit, 
+  MessageSquare, 
+  Clock, 
+  AlertCircle, 
+  CheckCircle, 
+  Upload, 
+  FileText, 
+  Play, 
+  Pause, 
+  RotateCw,
+  Trash2,
+  Download,
+  RotateCcw,
+} from 'lucide-react'
 import Link from 'next/link'
-import { ArrowLeft, Edit, MessageSquare, Clock, AlertCircle, CheckCircle, Upload, FileText, X, MoreVertical, Play, Pause, RotateCcw } from 'lucide-react'
-
 
 interface Task {
   _id: string
@@ -27,7 +46,6 @@ interface Task {
   attachments?: { id: string; name: string; url: string; size: number; type: string; uploaded_at: string }[]
 }
 
-
 interface Comment {
   _id: string
   content: string
@@ -36,7 +54,6 @@ interface Comment {
   mentions?: string[]
   attachments?: { id: string; name: string; url: string; type: string }[]
 }
-
 
 interface Activity {
   _id: string
@@ -48,7 +65,6 @@ interface Activity {
   created_at: string
 }
 
-
 export default function TaskDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -56,7 +72,6 @@ export default function TaskDetailPage() {
   const [comments, setComments] = useState<Comment[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [newComment, setNewComment] = useState('')
-  const [commentMentions, setCommentMentions] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [user, setUser] = useState<any>(null)
@@ -65,12 +80,13 @@ export default function TaskDetailPage() {
   const [showStatusMenu, setShowStatusMenu] = useState(false)
   const [manualTimeEntry, setManualTimeEntry] = useState('')
   const [uploadingFiles, setUploadingFiles] = useState(false)
-
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
     if (userData) setUser(JSON.parse(userData))
-
 
     const fetchTask = async () => {
       try {
@@ -80,11 +96,9 @@ export default function TaskDetailPage() {
           credentials: 'include',
         })
 
-
         if (response.ok) {
           const taskData = await response.json()
           setTask(taskData)
-
 
           const [commentsResponse, activitiesResponse] = await Promise.all([
             fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/comments/task/${params.id}`, {
@@ -97,12 +111,10 @@ export default function TaskDetailPage() {
             }),
           ])
 
-
           if (commentsResponse.ok) {
             const commentsData = await commentsResponse.json()
             setComments(commentsData)
           }
-
 
           if (activitiesResponse.ok) {
             const activitiesData = await activitiesResponse.json()
@@ -110,16 +122,14 @@ export default function TaskDetailPage() {
           }
         }
       } catch (error) {
-        console.error('[v0] Failed to fetch task:', error)
+        console.error('Failed to fetch task:', error)
       } finally {
         setLoading(false)
       }
     }
 
-
     fetchTask()
   }, [params.id])
-
 
   useEffect(() => {
     let interval: NodeJS.Timeout
@@ -131,14 +141,64 @@ export default function TaskDetailPage() {
     return () => clearInterval(interval)
   }, [timerActive])
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = Array.from(e.target.files || [])
+  if (files.length === 0) return
+
+  setUploadingFiles(true)
+  setUploadProgress(0)
+
+  try {
+    const token = localStorage.getItem('access_token')
+    const formData = new FormData()
+
+    // Add files with correct field name
+    files.forEach((file) => {
+      formData.append('attachments', file)  // ✅ Your API expects 'attachments'
+    })
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${params.id}/attachments`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      credentials: 'include',
+      body: formData,
+    })
+
+    // ✅ FIXED: Check response.status instead of just .ok
+    if (response.status >= 200 && response.status < 300) {
+      const updatedTask = await response.json()
+      setTask(updatedTask)
+      setUploadProgress(100)
+      
+      // Reset after success
+      setTimeout(() => {
+        setUploadProgress(0)
+        setUploadingFiles(false)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+      }, 1000)
+    } else {
+      // ✅ FIXED: Get actual error message
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+      console.error('Upload failed:', errorData)
+      throw new Error(errorData.error || `Server error: ${response.status}`)
+    }
+  } catch (error: any) {
+    console.error('Upload error:', error)
+    setUploadProgress(0)
+    setUploadingFiles(false)
+    alert(`Upload failed: ${error.message}`)
+  }
+}
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newComment.trim()) return
 
-
     setSubmitting(true)
-
 
     try {
       const token = localStorage.getItem('access_token')
@@ -152,24 +212,21 @@ export default function TaskDetailPage() {
         body: JSON.stringify({
           task_id: params.id,
           content: newComment,
-          mentions: commentMentions,
         }),
       })
-
 
       if (response.ok) {
         const comment = await response.json()
         setComments([...comments, comment])
         setNewComment('')
-        setCommentMentions([])
+        textareaRef.current?.focus()
       }
     } catch (error) {
-      console.error('[v0] Failed to add comment:', error)
+      console.error('Failed to add comment:', error)
     } finally {
       setSubmitting(false)
     }
   }
-
 
   const handleStatusChange = async (newStatus: string) => {
     try {
@@ -184,26 +241,22 @@ export default function TaskDetailPage() {
         body: JSON.stringify({ status: newStatus }),
       })
 
-
       if (response.ok) {
         const updatedTask = await response.json()
         setTask(updatedTask)
         setShowStatusMenu(false)
       }
     } catch (error) {
-      console.error('[v0] Failed to update task status:', error)
+      console.error('Failed to update task status:', error)
     }
   }
-
 
   const handleStartTimer = () => {
     setTimerActive(true)
   }
 
-
   const handleStopTimer = async () => {
     setTimerActive(false)
-
 
     try {
       const token = localStorage.getItem('access_token')
@@ -217,7 +270,6 @@ export default function TaskDetailPage() {
         body: JSON.stringify({ duration: timerDuration }),
       })
 
-
       if (task) {
         setTask({
           ...task,
@@ -225,17 +277,14 @@ export default function TaskDetailPage() {
         })
       }
 
-
       setTimerDuration(0)
     } catch (error) {
-      console.error('[v0] Failed to log time:', error)
+      console.error('Failed to log time:', error)
     }
   }
 
-
   const handleManualTimeEntry = async () => {
     if (!manualTimeEntry || isNaN(Number(manualTimeEntry))) return
-
 
     try {
       const token = localStorage.getItem('access_token')
@@ -249,7 +298,6 @@ export default function TaskDetailPage() {
         body: JSON.stringify({ duration: Number(manualTimeEntry) * 60 }),
       })
 
-
       if (task) {
         setTask({
           ...task,
@@ -257,53 +305,11 @@ export default function TaskDetailPage() {
         })
       }
 
-
       setManualTimeEntry('')
     } catch (error) {
-      console.error('[v0] Failed to log manual time:', error)
+      console.error('Failed to log manual time:', error)
     }
   }
-
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.currentTarget.files
-    if (!files) return
-
-
-    setUploadingFiles(true)
-
-
-    try {
-      const token = localStorage.getItem('access_token')
-      const formData = new FormData()
-
-
-      Array.from(files).forEach((file) => {
-        formData.append('files', file)
-      })
-
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${params.id}/attachments`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
-        body: formData,
-      })
-
-
-      if (response.ok) {
-        const updatedTask = await response.json()
-        setTask(updatedTask)
-      }
-    } catch (error) {
-      console.error('[v0] Failed to upload files:', error)
-    } finally {
-      setUploadingFiles(false)
-    }
-  }
-
 
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, { bg: string; text: string; border: string }> = {
@@ -315,399 +321,529 @@ export default function TaskDetailPage() {
     return colors[priority] || { bg: 'bg-slate-500/10', text: 'text-slate-400', border: 'border-slate-500/30' }
   }
 
-
   const getStatusColor = (status: string) => {
-    const colors: Record<string, { bg: string; text: string; border: string; label: string }> = {
-      completed: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30', label: 'Completed' },
-      in_progress: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30', label: 'In Progress' },
-      on_hold: { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/30', label: 'On Hold' },
-      todo: { bg: 'bg-slate-500/10', text: 'text-slate-400', border: 'border-slate-500/30', label: 'To Do' },
-      cancelled: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/30', label: 'Cancelled' },
+    const colors: Record<string, { bg: string; text: string; border: string; label: string; icon: any }> = {
+      completed: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30', label: 'Completed', icon: CheckCircle },
+      in_progress: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30', label: 'In Progress', icon: Play },
+      on_hold: { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/30', label: 'On Hold', icon: Pause },
+      todo: { bg: 'bg-slate-500/10', text: 'text-slate-400', border: 'border-slate-500/30', label: 'To Do', icon: RotateCcw },
+      cancelled: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/30', label: 'Cancelled', icon: AlertCircle },
     }
-    return colors[status] || { bg: 'bg-slate-500/10', text: 'text-slate-400', border: 'border-slate-500/30', label: 'Unknown' }
+    return colors[status] || { bg: 'bg-slate-500/10', text: 'text-slate-400', border: 'border-slate-500/30', label: 'Unknown', icon: AlertCircle }
   }
-
 
   const isOverdue = (dueDate: string, status: string) => {
     if (status === 'completed' || !dueDate) return false
     return new Date(dueDate) < new Date()
   }
 
-
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
     const secs = seconds % 60
-    return `${hours}h ${minutes}m ${secs}s`
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
-
 
   const formatTimeShort = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
-    return `${hours}h ${minutes}m`
+    return `${hours > 0 ? hours + 'h ' : ''}${minutes}m`
   }
-
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-slate-400">Loading task details...</div>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="flex flex-col items-center gap-4 text-slate-400">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-blue-500"></div>
+          <span>Loading task details...</span>
+        </div>
       </div>
     )
   }
-
 
   if (!task) {
     return (
-      <div className="space-y-6">
-        <p className="text-red-400">Task not found</p>
-        <Link href="/tasks">
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Tasks
-          </Button>
-        </Link>
-      </div>
-    )
-  }
-
-
-  const statusColors = getStatusColor(task.status)
-  const priorityColors = getPriorityColor(task.priority)
-
-
-  return (
-    <div className="space-y-6 pb-8">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
+      <div className="space-y-6 p-8">
+        <div className="text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">Task Not Found</h2>
+          <p className="text-slate-400 mb-6">The task you're looking for doesn't exist.</p>
           <Link href="/tasks">
-            <Button variant="ghost" className="text-slate-400 hover:text-slate-300 mb-4 gap-2 px-0">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2 h-10 px-6">
               <ArrowLeft className="w-4 h-4" />
               Back to Tasks
             </Button>
           </Link>
-          <div className="flex items-start gap-3 mb-2">
-            <h1 className="text-4xl font-bold text-white break-words">{task.title}</h1>
-            {isOverdue(task.due_date, task.status) && (
-              <Badge className="bg-red-500/20 text-red-400 border-red-500/30 flex-shrink-0 mt-2">
-                Overdue
-              </Badge>
-            )}
-          </div>
-          <p className="text-slate-400 text-sm">ID: {task._id}</p>
         </div>
-        {(user?.role === 'admin' || user?.role === 'manager' || user?._id === task.assigned_to) && (
-          <Link href={`/tasks/${task._id}/edit`}>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2 flex-shrink-0">
-              <Edit className="w-4 h-4" />
-              Edit
-            </Button>
-          </Link>
+      </div>
+    )
+  }
+
+  const statusColors = getStatusColor(task.status)
+  const priorityColors = getPriorityColor(task.priority)
+  const StatusIcon = statusColors.icon
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-8">
+          <div className="flex-1 min-w-0">
+            <Link href="/tasks" className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-300 mb-4 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Tasks
+            </Link>
+            <div className="flex items-start gap-4 mb-2">
+              <h1 className="text-3xl lg:text-4xl font-bold text-white break-words flex-1">{task.title}</h1>
+              {isOverdue(task.due_date, task.status) && (
+                <Badge className="bg-red-500/20 border-red-500/30 text-red-400 animate-pulse flex-shrink-0 mt-2">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  Overdue
+                </Badge>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
+              <span>ID: {task._id}</span>
+              {task.created_at && (
+                <span>Created {new Date(task.created_at).toLocaleDateString()}</span>
+              )}
+            </div>
+          </div>
+          {(user?.role === 'admin' || user?.role === 'manager' || user?._id === task.assigned_to) && (
+            <Link href={`/tasks/${task._id}/edit`}>
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2 h-11 px-6 shadow-lg">
+                <Edit className="w-4 h-4" />
+                Edit Task
+              </Button>
+            </Link>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
+          {/* Main Content */}
+          <div className="xl:col-span-2 space-y-6">
+            {/* Description */}
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 shadow-xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <FileText className="w-5 h-5 text-blue-400" />
+                  Description
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="prose prose-invert max-w-none">
+                  <p className="text-slate-300 whitespace-pre-wrap leading-relaxed text-lg">
+                    {task.description || 'No description provided.'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+{/* 🔥 PERFECTLY WORKING File Upload */}
+<div className="flex flex-col gap-2 p-4 bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl shadow-xl">
+  {/* Header */}
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-2">
+      <FileText className="w-5 h-5 text-blue-400" />
+      <span className="text-white font-semibold">Attachments ({task.attachments?.length || 0})</span>
+    </div>
+    
+    {/* ✅ THIS WILL DEFINITELY WORK */}
+    <label className="cursor-pointer">
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        onChange={handleFileUpload}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+        disabled={uploadingFiles}
+        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.txt,.csv"
+      />
+      <div className={`
+        flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700
+        hover:from-blue-500 hover:to-blue-600 text-white rounded-lg shadow-lg
+        font-medium transition-all duration-200 border border-blue-500/50
+        ${uploadingFiles 
+          ? 'opacity-60 cursor-not-allowed' 
+          : 'hover:shadow-xl hover:-translate-y-0.5 hover:scale-[1.02]'
+        }
+      `}>
+        {uploadingFiles ? (
+          <>
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Uploading...
+          </>
+        ) : (
+          <>
+            <Upload className="w-4 h-4" />
+            Upload Files
+          </>
         )}
       </div>
+    </label>
+  </div>
 
+  {/* Progress Bar */}
+  {uploadProgress > 0 && (
+    <div className="flex items-center gap-3">
+      <div className="flex-1 bg-slate-700/50 rounded-full h-2">
+        <div 
+          className="bg-gradient-to-r from-emerald-500 to-blue-500 h-2 rounded-full shadow-sm transition-all duration-500"
+          style={{ width: `${uploadProgress}%` }}
+        />
+      </div>
+      <span className="text-sm font-mono text-slate-300 min-w-[3rem] text-right">
+        {Math.round(uploadProgress)}%
+      </span>
+    </div>
+  )}
+</div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Description */}
-          <Card className="p-6 bg-slate-800 border-slate-700">
-            <h2 className="text-xl font-bold text-white mb-4">Description</h2>
-            <p className="text-slate-300 whitespace-pre-wrap leading-relaxed">
-              {task.description || 'No description provided'}
-            </p>
-          </Card>
-
-
-          {/* File Attachments */}
-          <Card className="p-6 bg-slate-800 border-slate-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-400" />
-                Attachments
-              </h2>
-              <label className="cursor-pointer">
-                <input type="file" multiple onChange={handleFileUpload} className="hidden" disabled={uploadingFiles} />
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2" asChild>
-                  <span>
-                    <Upload className="w-4 h-4" />
-                    {uploadingFiles ? 'Uploading...' : 'Upload'}
-                  </span>
-                </Button>
-              </label>
+{/* File List */}
+{task.attachments && task.attachments.length > 0 && (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+    {task.attachments.map((file) => (
+      <div key={file.id} className="group p-4 bg-slate-800/70 hover:bg-slate-800 border border-slate-700/50 hover:border-slate-600 rounded-xl transition-all duration-200 hover:shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center flex-shrink-0">
+              <FileText className="w-5 h-5 text-slate-400 group-hover:text-slate-200" />
             </div>
-
-
-            {task.attachments && task.attachments.length > 0 ? (
-              <div className="space-y-2">
-                {task.attachments.map((file) => (
-                  <div
-                    key={file.id}
-                    className="flex items-center justify-between p-3 bg-slate-700 rounded-lg border border-slate-600 hover:border-slate-500 transition"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <FileText className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-white font-medium truncate">{file.name}</p>
-                        <p className="text-slate-400 text-xs">{(file.size / 1024).toFixed(1)} KB</p>
-                      </div>
-                    </div>
-                    <a
-                      href={file.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300 text-sm"
-                    >
-                      Download
-                    </a>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-slate-400 text-center py-6">No attachments yet</p>
-            )}
-          </Card>
-
-
-          {/* Comments */}
-          <Card className="p-6 bg-slate-800 border-slate-700">
-            <div className="flex items-center gap-2 mb-6">
-              <MessageSquare className="w-5 h-5 text-blue-400" />
-              <h2 className="text-xl font-bold text-white">Comments ({comments.length})</h2>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-white truncate text-sm" title={file.name}>{file.name}</p>
+              <p className="text-xs text-slate-500 mt-1">
+                {(file.size / 1024).toFixed(1)} KB • {file.type.split('/')[1] || 'file'}
+              </p>
             </div>
+          </div>
+          <a
+            href={file.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={file.name}
+            className="p-2 text-slate-500 hover:text-blue-400 hover:bg-slate-700 rounded-lg transition-all ml-2"
+          >
+            <Download className="w-4 h-4" />
+          </a>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+
+{(!task.attachments || task.attachments.length === 0) && (
+  <div className="text-center py-12 border-2 border-dashed border-slate-700/50 rounded-2xl bg-slate-800/30 mt-4">
+    <FileText className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+    <h3 className="text-lg font-semibold text-slate-400 mb-2">No attachments</h3>
+    <p className="text-slate-500 mb-6">Upload files to get started</p>
+  </div>
+)}
 
 
-            <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
-              {comments.length === 0 ? (
-                <p className="text-slate-400 text-center py-6">No comments yet. Be the first to comment!</p>
-              ) : (
-                comments.map((comment) => (
-                  <div key={comment._id} className="border-l-2 border-blue-500/30 pl-4 py-2">
-                    <div className="flex justify-between items-start mb-2">
-                      <p className="font-semibold text-white">{comment.created_by}</p>
-                      <p className="text-slate-400 text-xs">
-                        {new Date(comment.created_at).toLocaleDateString()} at{' '}
-                        {new Date(comment.created_at).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
-                    </div>
-                    <p className="text-slate-300">{comment.content}</p>
-                    {comment.mentions && comment.mentions.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {comment.mentions.map((mention) => (
-                          <Badge key={mention} className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-xs">
-                            @{mention}
-                          </Badge>
-                        ))}
+            {/* Comments */}
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 shadow-xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <MessageSquare className="w-5 h-5 text-blue-400" />
+                  Comments ({comments.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <ScrollArea className="h-80 pr-4">
+                  <div className="space-y-4">
+                    {comments.length === 0 ? (
+                      <div className="text-center py-12 text-slate-400">
+                        <MessageSquare className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                        <p className="text-lg mb-2">No comments yet</p>
+                        <p className="text-sm">Be the first to comment on this task</p>
                       </div>
+                    ) : (
+                      comments.map((comment) => (
+                        <div key={comment._id} className="flex gap-4">
+                          <Avatar className="w-9 h-9 flex-shrink-0">
+                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-xs">
+                              {comment.created_by.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-white truncate text-sm">{comment.created_by}</span>
+                              <span className="text-xs text-slate-500">
+                                {new Date(comment.created_at).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="text-slate-300 leading-relaxed text-sm">{comment.content}</p>
+                            {comment.mentions && comment.mentions.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {comment.mentions.map((mention) => (
+                                  <Badge key={mention} className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-xs">
+                                    @{mention}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
                     )}
                   </div>
-                ))
-              )}
-            </div>
+                </ScrollArea>
 
+                <Separator className="my-6 bg-slate-700" />
+                
+                <form onSubmit={handleAddComment} className="space-y-3">
+                  <div className="flex gap-3">
+                    <Avatar className="w-9 h-9 flex-shrink-0">
+                      <AvatarFallback className="bg-gradient-to-br from-green-500 to-green-600 text-white font-semibold text-xs">
+                        {user?.first_name ? user.first_name.slice(0, 2).toUpperCase() : 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <Textarea
+                      ref={textareaRef}
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Share your thoughts or updates... Use @name to mention someone"
+                      rows={3}
+                      disabled={submitting}
+                      className="flex-1 min-h-[80px] resize-none"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-500">Press Enter + Shift to add new line</span>
+                    <Button
+                      type="submit"
+                      disabled={submitting || !newComment.trim()}
+                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg h-11 px-8"
+                    >
+                      {submitting ? 'Posting...' : 'Post Comment'}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
 
-            <form onSubmit={handleAddComment} className="pt-6 border-t border-slate-700">
-              <label className="block text-sm font-semibold text-slate-200 mb-3">Add a Comment</label>
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Share your thoughts or updates... Use @name to mention someone"
-                rows={3}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:outline-none focus:border-blue-500 focus:ring-blue-500/20 placeholder-slate-500 resize-none mb-3"
-              />
-              <Button
-                type="submit"
-                disabled={submitting || !newComment.trim()}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Post Comment
-              </Button>
-            </form>
-          </Card>
+            {/* Activity Feed */}
+            {activities.length > 0 && (
+              <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-white">Activity Feed</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <ScrollArea className="h-64 pr-4">
+                    <div className="space-y-3">
+                      {activities.map((activity) => (
+                        <div key={activity._id} className="flex items-start gap-3 p-3 bg-slate-700/30 rounded-lg border border-slate-600/50">
+                          <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-slate-300">
+                              <span className="font-semibold text-white">{activity.user}</span>
+                              {activity.type === 'status_change' && (
+                                <>
+                                  {' '}changed status from <span className="font-mono bg-slate-600 px-1.5 py-0.5 rounded text-xs text-slate-200">{activity.old_value}</span> 
+                                  to <span className="font-mono bg-slate-600 px-1.5 py-0.5 rounded text-xs text-slate-200">{activity.new_value}</span>
+                                </>
+                              )}
+                              {activity.type === 'comment' && ' added a comment'}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {new Date(activity.created_at).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
+          {/* Sidebar - Time Tracking, Status, Priority, etc. (unchanged) */}
+          <div className="space-y-6 xl:space-y-8">
+            {/* Status */}
+            <Card className={`bg-slate-800/50 backdrop-blur-sm border ${statusColors.border} shadow-xl overflow-hidden`}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <StatusIcon className="w-4 h-4" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">Status</span>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Popover open={showStatusMenu} onOpenChange={setShowStatusMenu}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      className={`w-full justify-between h-14 px-4 py-2 ${statusColors.bg} ${statusColors.border} ${statusColors.text} hover:bg-slate-700/50 transition-all duration-200 shadow-sm`}
+                    >
+                      <span className="font-medium capitalize">{statusColors.label}</span>
+                      <svg className="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-1 bg-slate-800/95 backdrop-blur-sm border-slate-700/50 mt-1 shadow-2xl">
+                    {['todo', 'in_progress', 'on_hold', 'completed', 'cancelled'].map((statusOption) => {
+                      const optionColors = getStatusColor(statusOption)
+                      return (
+                        <Button
+                          key={statusOption}
+                          variant="ghost"
+                          className={`w-full justify-start h-12 px-4 text-left hover:bg-slate-700/50 ${optionColors.text} capitalize rounded-lg transition-all duration-200 ${task.status === statusOption ? 'bg-slate-700/50 font-semibold shadow-sm' : ''}`}
+                          onClick={() => handleStatusChange(statusOption)}
+                        >
+                          <optionColors.icon className="w-4 h-4 mr-2 flex-shrink-0 opacity-70" />
+                          {optionColors.label}
+                        </Button>
+                      )
+                    })}
+                  </PopoverContent>
+                </Popover>
+              </CardContent>
+            </Card>
 
-          {/* Activity Timeline */}
-          {activities.length > 0 && (
-            <Card className="p-6 bg-slate-800 border-slate-700">
-              <h2 className="text-xl font-bold text-white mb-4">Activity</h2>
-              <div className="space-y-3">
-                {activities.map((activity) => (
-                  <div key={activity._id} className="text-sm text-slate-300 pl-4 border-l-2 border-slate-700">
-                    <p>
-                      <span className="font-semibold text-white">{activity.user}</span>
-                      {activity.type === 'status_change' && (
-                        <span>
-                          {' '}
-                          changed status from <span className="text-slate-200">{activity.old_value}</span> to{' '}
-                          <span className="text-slate-200">{activity.new_value}</span>
-                        </span>
-                      )}
-                      {activity.type === 'comment' && <span> added a comment</span>}
+            {/* Priority */}
+            <Card className={`bg-slate-800/50 backdrop-blur-sm border ${priorityColors.border} shadow-xl overflow-hidden`}>
+              <CardHeader className="pb-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">Priority</span>
+              </CardHeader>
+              <CardContent className="pt-0 pb-4">
+                <Badge className={`text-xs px-4 py-2 h-auto min-h-0 ${priorityColors.bg} ${priorityColors.text} ${priorityColors.border} font-semibold shadow-sm`}>
+                  {task.priority.toUpperCase()}
+                </Badge>
+              </CardContent>
+            </Card>
+
+            {/* Due Date */}
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 shadow-xl">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">Due Date</span>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0 pb-4">
+                <div className="space-y-1">
+                  <p className={`font-mono text-lg font-semibold ${isOverdue(task.due_date, task.status) ? 'text-red-400' : 'text-slate-200'}`}>
+                    {task.due_date
+                      ? new Date(task.due_date).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })
+                      : 'No due date'}
+                  </p>
+                  {task.due_date && (
+                    <p className="text-xs text-slate-500 font-mono">
+                      {new Date(task.due_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
-                    <p className="text-slate-400 text-xs mt-1">
-                      {new Date(activity.created_at).toLocaleDateString()} at{' '}
-                      {new Date(activity.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Time Tracking */}
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 shadow-xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-400" />
+                  <CardTitle className="text-white text-base leading-tight">Time Tracking</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-0">
+                <div className="text-center py-4 bg-slate-700/50 rounded-xl border border-slate-600/50">
+                  <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Total Logged</p>
+                  <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-400 to-blue-500 bg-clip-text text-transparent font-mono">
+                    {task.time_logged > 0 ? formatTimeShort(task.time_logged) : '0h 0m'}
+                  </p>
+                </div>
+
+                {/* Active Timer */}
+                <div className="space-y-3">
+                  <div className="text-center p-4 bg-gradient-to-r from-blue-500/10 to-blue-600/10 rounded-xl border border-blue-500/30">
+                    <p className="text-xs text-blue-400 uppercase tracking-wider font-semibold mb-2">Active Timer</p>
+                    <p className="text-3xl lg:text-4xl font-bold font-mono text-blue-400 tracking-tight">
+                      {formatTime(timerDuration)}
                     </p>
                   </div>
-                ))}
-              </div>
-            </Card>
-          )}
-        </div>
-
-
-        {/* Sidebar */}
-        <div className="space-y-4">
-          {/* Status */}
-          <Card className={`p-4 border ${statusColors.bg} ${statusColors.border} relative`}>
-            <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase">Status</label>
-            <div className="relative">
-              <Button
-                onClick={() => setShowStatusMenu(!showStatusMenu)}
-                className={`w-full justify-between ${statusColors.text} bg-slate-700 hover:bg-slate-600 border border-slate-600`}
-              >
-                <span className="capitalize">{statusColors.label}</span>
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-              {showStatusMenu && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-slate-700 border border-slate-600 rounded-lg shadow-lg z-10">
-                  {['todo', 'in_progress', 'on_hold', 'completed', 'cancelled'].map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusChange(status)}
-                      className="w-full text-left px-4 py-2 text-white hover:bg-slate-600 first:rounded-t-lg last:rounded-b-lg capitalize text-sm"
-                    >
-                      {status.replace('_', ' ')}
-                    </button>
-                  ))}
+                  <div className="flex gap-2">
+                    {!timerActive ? (
+                      <Button 
+                        onClick={handleStartTimer} 
+                        className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg h-12 font-semibold shadow-lg"
+                      >
+                        <Play className="w-4 h-4 mr-2" />
+                        Start Timer
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={handleStopTimer} 
+                        className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg h-12 font-semibold"
+                      >
+                        <Pause className="w-4 h-4 mr-2" />
+                        Stop Timer
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-          </Card>
 
-
-          {/* Priority */}
-          <Card className={`p-4 border ${priorityColors.bg} ${priorityColors.border}`}>
-            <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase">Priority</label>
-            <Badge className={`${priorityColors.bg} ${priorityColors.text} ${priorityColors.border} border capitalize`}>
-              {task.priority}
-            </Badge>
-          </Card>
-
-
-          {/* Due Date */}
-          <Card className="p-4 bg-slate-800 border-slate-700">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-4 h-4 text-slate-400" />
-              <label className="text-xs font-semibold text-slate-300 uppercase">Due Date</label>
-            </div>
-            <p className="text-slate-300 font-semibold">
-              {task.due_date
-                ? new Date(task.due_date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  })
-                : 'No due date'}
-            </p>
-            {task.due_date && (
-              <p className="text-slate-400 text-xs mt-1">
-                {new Date(task.due_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            )}
-          </Card>
-
-
-          {/* Time Tracking */}
-          <Card className="p-4 bg-slate-800 border-slate-700 space-y-3">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-blue-400" />
-                <label className="text-xs font-semibold text-slate-300 uppercase">Time Logged</label>
-              </div>
-              <p className="text-slate-300 font-semibold">
-                {task.time_logged > 0 ? formatTimeShort(task.time_logged) : 'No time logged'}
-              </p>
-            </div>
-
-
-            {/* Timer */}
-            <div className="pt-3 border-t border-slate-700">
-              <div className="text-center mb-3">
-                <p className="text-slate-400 text-xs mb-2">ACTIVE TIMER</p>
-                <p className="text-2xl font-bold text-blue-400 font-mono">{formatTime(timerDuration)}</p>
-              </div>
-              <div className="flex gap-2">
-                {!timerActive ? (
-                  <Button onClick={handleStartTimer} className="flex-1 bg-green-600 hover:bg-green-700 text-white gap-2">
-                    <Play className="w-4 h-4" />
-                    Start
-                  </Button>
-                ) : (
-                  <Button onClick={handleStopTimer} className="flex-1 bg-red-600 hover:bg-red-700 text-white gap-2">
-                    <Pause className="w-4 h-4" />
-                    Stop
-                  </Button>
-                )}
-              </div>
-            </div>
-
-
-            {/* Manual Time Entry */}
-            <div className="pt-3 border-t border-slate-700">
-              <label className="block text-xs font-semibold text-slate-300 mb-2">ADD TIME (minutes)</label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  value={manualTimeEntry}
-                  onChange={(e) => setManualTimeEntry(e.target.value)}
-                  placeholder="Minutes"
-                  min="0"
-                  className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg focus:outline-none focus:border-blue-500 placeholder-slate-500"
-                />
-                <Button
-                  onClick={handleManualTimeEntry}
-                  disabled={!manualTimeEntry}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Add
-                </Button>
-              </div>
-            </div>
-          </Card>
-
-
-          {/* Tags */}
-          {task.tags && task.tags.length > 0 && (
-            <Card className="p-4 bg-slate-800 border-slate-700">
-              <label className="block text-xs font-semibold text-slate-300 mb-3 uppercase">Tags</label>
-              <div className="flex flex-wrap gap-2">
-                {task.tags.map((tag) => (
-                  <Badge key={tag} className="bg-blue-500/20 text-blue-300 border-blue-500/30">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
+                {/* Manual Entry */}
+                <div className="pt-4 border-t border-slate-700/50">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-3">Manual Entry</label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      value={manualTimeEntry}
+                      onChange={(e) => setManualTimeEntry(e.target.value)}
+                      placeholder="Minutes"
+                      min="0"
+                      className="h-12 font-mono text-lg"
+                    />
+                    <Button
+                      onClick={handleManualTimeEntry}
+                      disabled={!manualTimeEntry || isNaN(Number(manualTimeEntry))}
+                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white h-12 px-6 shadow-lg font-semibold"
+                    >
+                      Add Time
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
-          )}
 
+            {/* Tags */}
+            {task.tags && task.tags.length > 0 && (
+              <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 shadow-xl">
+                <CardHeader className="pb-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">Tags</span>
+                </CardHeader>
+                <CardContent className="pt-0 pb-4">
+                  <div className="flex flex-wrap gap-2">
+                    {task.tags.map((tag) => (
+                      <Badge key={tag} className="bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-300 border-blue-500/30 backdrop-blur-sm">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Metadata */}
-          <Card className="p-4 bg-slate-800 border-slate-700">
-            <label className="block text-xs font-semibold text-slate-300 mb-3 uppercase">Info</label>
-            <div className="space-y-2 text-sm text-slate-400">
-              <p>Created: {new Date(task.created_at).toLocaleDateString()}</p>
-              <p>Updated: {new Date(task.updated_at).toLocaleDateString()}</p>
-            </div>
-          </Card>
+            {/* Metadata */}
+            <Card className="bg-slate-800/30 backdrop-blur-sm border-slate-700/30 shadow-xl">
+              <CardHeader className="pb-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">Metadata</span>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-2 text-xs">
+                <div className="space-y-1">
+                  <span className="text-slate-500 font-mono">Created</span>
+                  <span className="font-mono text-slate-300 block">{new Date(task.created_at).toLocaleDateString()}</span>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-slate-500 font-mono">Updated</span>
+                  <span className="font-mono text-slate-300 block">{new Date(task.updated_at).toLocaleDateString()}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
